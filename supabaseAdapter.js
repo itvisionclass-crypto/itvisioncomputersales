@@ -1,187 +1,202 @@
 /**
  * IT VISION COMPUTER SALES & SERVICE
- * Supabase Client Adapter & Cloud Database Service
+ * Supabase Client Adapter & Google Drive Media Upload Engine
  * 
- * Project ID: mztnzrpfpszfieooeprj
- * Project URL: https://mztnzrpfpszfieooeprj.supabase.co
- * (Non-media data: Products, Orders, Service Tickets, Users, OTP Logs)
+ * Supabase Project: mztnzrpfpszfieooeprj
+ * Supabase URL: https://mztnzrpfpszfieooeprj.supabase.co
+ * Google Drive Media Script URL: https://script.google.com/macros/s/AKfycbwa3D0RyEZl50W6IDGijCKcaL7qbSBm9q4W05yy4l7G5LRIZ9fQvww6j-PVkGoQ7ID53g/exec
+ * 
+ * Target Schema:
+ * Table: public.products (id, name, price, photos_link, description, available_pcs)
  */
 
-const SUPABASE_CONFIG = {
-  PROJECT_ID: "mztnzrpfpszfieooeprj",
-  URL: "https://mztnzrpfpszfieooeprj.supabase.co",
-  // Stored in localStorage or injected via environment
-  ANON_KEY: localStorage.getItem("ITV_SUPABASE_ANON_KEY") || ""
+const IT_VISION_CONFIG = {
+  SUPABASE_PROJECT_ID: "mztnzrpfpszfieooeprj",
+  SUPABASE_URL: "https://mztnzrpfpszfieooeprj.supabase.co",
+  SUPABASE_ANON_KEY: localStorage.getItem("ITV_SUPABASE_ANON_KEY") || "",
+  MEDIA_UPLOAD_ENDPOINT: "https://script.google.com/macros/s/AKfycbwa3D0RyEZl50W6IDGijCKcaL7qbSBm9q4W05yy4l7G5LRIZ9fQvww6j-PVkGoQ7ID53g/exec"
 };
 
 let supabaseClient = null;
 
+/**
+ * Initialize Supabase Client
+ */
 function initSupabase() {
-  if (typeof supabase !== "undefined" && SUPABASE_CONFIG.ANON_KEY) {
+  const anonKey = IT_VISION_CONFIG.SUPABASE_ANON_KEY || localStorage.getItem("ITV_SUPABASE_ANON_KEY");
+  if (typeof supabase !== "undefined" && anonKey) {
     try {
-      supabaseClient = supabase.createClient(SUPABASE_CONFIG.URL, SUPABASE_CONFIG.ANON_KEY);
-      console.log("✔ Supabase Client initialized for project:", SUPABASE_CONFIG.PROJECT_ID);
+      supabaseClient = supabase.createClient(IT_VISION_CONFIG.SUPABASE_URL, anonKey);
+      console.log("✔ Supabase initialized for project:", IT_VISION_CONFIG.SUPABASE_PROJECT_ID);
+      return supabaseClient;
     } catch (e) {
       console.warn("Supabase init error:", e);
     }
   }
+  return null;
 }
 
 /**
- * Fetch Products from Supabase
+ * Upload Media (Photos, Videos, Audios) to Google Drive
+ * via the Apps Script Web App Endpoint.
+ * 
+ * @param {File} file - The file object from <input type="file">
+ * @param {Function} [onStatusUpdate] - Callback for progress/status messages
+ * @returns {Promise<{success: boolean, directUrl: string, fileUrl: string, fileId: string}>}
  */
-async function fetchSupabaseCatalog() {
+async function uploadMediaToGoogleDrive(file, onStatusUpdate) {
+  if (!file) {
+    throw new Error("No file provided for upload.");
+  }
+
+  if (onStatusUpdate) onStatusUpdate(`Reading ${file.name} (${Math.round(file.size / 1024)} KB)...`);
+
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = async function() {
+      try {
+        const fullDataUrl = reader.result;
+        // Extract raw base64 string
+        let base64Content = fullDataUrl;
+        if (base64Content.indexOf("base64,") !== -1) {
+          base64Content = base64Content.split("base64,")[1];
+        }
+
+        const payload = {
+          filename: file.name,
+          mimeType: file.type || "application/octet-stream",
+          base64: base64Content
+        };
+
+        if (onStatusUpdate) onStatusUpdate(`Uploading ${file.name} to Google Drive...`);
+
+        // Send payload via POST as text/plain to prevent browser CORS preflight (OPTIONS) block
+        const response = await fetch(IT_VISION_CONFIG.MEDIA_UPLOAD_ENDPOINT, {
+          method: "POST",
+          headers: {
+            "Content-Type": "text/plain;charset=utf-8"
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+
+        // Support various Google Apps Script response formats
+        if (result && (result.success || result.fileUrl || result.directUrl || result.url)) {
+          const directUrl = result.directUrl || 
+            (result.fileId ? `https://lh3.googleusercontent.com/d/${result.fileId}=w800-rw` : result.fileUrl || result.url);
+          
+          if (onStatusUpdate) onStatusUpdate(`✔ Uploaded successfully to Google Drive!`);
+          
+          resolve({
+            success: true,
+            fileId: result.fileId || "",
+            fileUrl: result.fileUrl || result.url || directUrl,
+            directUrl: directUrl,
+            filename: file.name
+          });
+        } else {
+          throw new Error(result.error || result.message || "Upload failed from Google Apps Script.");
+        }
+      } catch (err) {
+        console.error("Media upload error:", err);
+        if (onStatusUpdate) onStatusUpdate(`❌ Upload failed: ${err.message}`);
+        reject(err);
+      }
+    };
+
+    reader.onerror = function(e) {
+      if (onStatusUpdate) onStatusUpdate(`❌ File read error`);
+      reject(new Error("Failed to read file on client side."));
+    };
+
+    reader.readAsDataURL(file);
+  });
+}
+
+/**
+ * Supabase Products Operations (Only Table in Database)
+ */
+
+/**
+ * Fetch all products from Supabase
+ */
+async function fetchSupabaseProducts() {
+  if (!supabaseClient) initSupabase();
   if (!supabaseClient) return null;
+
   try {
     const { data, error } = await supabaseClient
       .from('products')
-      .select('*')
-      .eq('status', 'ACTIVE');
-    
+      .select('id, name, price, photos_link, description, available_pcs')
+      .order('price', { ascending: false });
+
     if (error) {
-      console.warn("Supabase products fetch failed:", error);
+      console.warn("Supabase fetch error:", error);
       return null;
     }
-
-    return data.map(item => ({
-      product_id: item.product_id,
-      sku_code: item.sku_code,
-      title: item.title,
-      category: item.category,
-      condition: item.condition,
-      mrp_price: Number(item.mrp_price),
-      selling_price: Number(item.selling_price),
-      bulk_price_tier5: Number(item.bulk_price_tier5 || 0),
-      bulk_price_tier10: Number(item.bulk_price_tier10 || 0),
-      stock: {
-        prantij: item.stock_prantij || 0,
-        talod: item.stock_talod || 0,
-        ranasan: item.stock_ranasan || 0,
-        chiloda: item.stock_chiloda || 0,
-        dhansura: item.stock_dhansura || 0,
-        kheda: item.stock_kheda || 0,
-        total: (item.stock_prantij || 0) + (item.stock_talod || 0) + (item.stock_ranasan || 0) +
-               (item.stock_chiloda || 0) + (item.stock_dhansura || 0) + (item.stock_kheda || 0)
-      },
-      drive_image_id: item.drive_image_id || "",
-      specs: item.specs_json || {},
-      status: item.status
-    }));
+    return data;
   } catch (err) {
-    console.warn("Supabase catalog exception:", err);
+    console.warn("Supabase fetch exception:", err);
     return null;
   }
 }
 
 /**
- * Insert Order into Supabase
+ * Insert or Update Product in Supabase
+ * @param {Object} product - { id, name, price, photos_link, description, available_pcs }
  */
-async function insertSupabaseOrder(orderPayload) {
-  if (!supabaseClient) return null;
-  try {
-    const orderId = "ITV-ORD-" + Date.now();
-    const { data, error } = await supabaseClient
-      .from('orders')
-      .insert([{
-        order_id: orderId,
-        customer_name: orderPayload.customerName,
-        customer_phone: orderPayload.customerPhone,
-        customer_email: orderPayload.customerEmail,
-        fulfillment_branch: orderPayload.fulfillmentBranch,
-        order_items_json: orderPayload.items,
-        total_amount: orderPayload.totalAmount,
-        payment_method: 'UPI_QR',
-        payment_status: 'PENDING_UTR_VERIFICATION',
-        utr_number: orderPayload.utrNumber,
-        pdf_drive_link: orderPayload.invoiceUrl || ''
-      }])
-      .select();
+async function saveSupabaseProduct(product) {
+  if (!supabaseClient) initSupabase();
+  if (!supabaseClient) throw new Error("Supabase client is not connected. Please set anon key.");
 
-    if (error) {
-      console.warn("Supabase order insert failed:", error);
-      return null;
-    }
-    return { success: true, orderId: orderId, data: data };
-  } catch (err) {
-    console.warn("Supabase order exception:", err);
-    return null;
+  const payload = {
+    id: product.id,
+    name: product.name,
+    price: Number(product.price),
+    photos_link: product.photos_link || "",
+    description: product.description || "",
+    available_pcs: Number(product.available_pcs || 0),
+    updated_at: new Date().toISOString()
+  };
+
+  const { data, error } = await supabaseClient
+    .from('products')
+    .upsert(payload, { onConflict: 'id' })
+    .select();
+
+  if (error) {
+    throw error;
   }
+  return data;
 }
 
 /**
- * Insert Service Ticket into Supabase
+ * Delete Product from Supabase by ID
  */
-async function insertSupabaseTicket(ticketData) {
-  if (!supabaseClient) return null;
-  try {
-    const seq = ("0000" + Math.floor(Math.random() * 9000 + 1000)).slice(-4);
-    const ticketId = "ITV-SRV-2026-" + seq;
-    const initialLog = [{
-      time: new Date().toLocaleTimeString(),
-      date: new Date().toLocaleDateString(),
-      note: `Ticket created online. Drop-off selected at ${ticketData.branchLocation || 'Prantij (HO)'}`
-    }];
+async function deleteSupabaseProduct(productId) {
+  if (!supabaseClient) initSupabase();
+  if (!supabaseClient) throw new Error("Supabase client is not connected.");
 
-    const { data, error } = await supabaseClient
-      .from('service_tickets')
-      .insert([{
-        ticket_id: ticketId,
-        customer_name: ticketData.customerName,
-        customer_phone: ticketData.customerPhone,
-        device_category: ticketData.deviceCategory,
-        device_serial: ticketData.deviceSerial || 'N/A',
-        reported_fault: ticketData.reportedFault,
-        branch_location: ticketData.branchLocation || 'Prantij (HO)',
-        current_status: 'RECEIVED',
-        est_cost: ticketData.estCost || 0.00,
-        tech_notes_log: initialLog
-      }])
-      .select();
+  const { data, error } = await supabaseClient
+    .from('products')
+    .delete()
+    .eq('id', productId)
+    .select();
 
-    if (error) {
-      console.warn("Supabase ticket insert failed:", error);
-      return null;
-    }
-    return { success: true, ticketId: ticketId, data: data };
-  } catch (err) {
-    console.warn("Supabase ticket exception:", err);
-    return null;
+  if (error) {
+    throw error;
   }
+  return data;
 }
 
-/**
- * Fetch Ticket by Ticket ID or Phone
- */
-async function fetchSupabaseTicket(query) {
-  if (!supabaseClient) return null;
-  try {
-    const clean = query.trim();
-    let q = supabaseClient.from('service_tickets').select('*');
-    if (clean.toUpperCase().startsWith("ITV-SRV-")) {
-      q = q.eq('ticket_id', clean.toUpperCase());
-    } else {
-      q = q.eq('customer_phone', clean);
-    }
-
-    const { data, error } = await q.order('created_at', { ascending: false }).limit(1);
-    if (error || !data || data.length === 0) return null;
-
-    const row = data[0];
-    return {
-      ticketId: row.ticket_id,
-      createdDate: row.created_at,
-      customerName: row.customer_name,
-      customerPhone: row.customer_phone,
-      deviceCategory: row.device_category,
-      deviceSerial: row.device_serial,
-      reportedFault: row.reported_fault,
-      branchLocation: row.branch_location,
-      currentStatus: row.current_status,
-      estCost: Number(row.est_cost || 0),
-      notesLog: row.tech_notes_log || []
-    };
-  } catch (err) {
-    console.warn("Supabase ticket lookup error:", err);
-    return null;
-  }
-}
+// Global exposure
+window.ITVisionSupabase = {
+  config: IT_VISION_CONFIG,
+  init: initSupabase,
+  uploadMedia: uploadMediaToGoogleDrive,
+  fetchProducts: fetchSupabaseProducts,
+  saveProduct: saveSupabaseProduct,
+  deleteProduct: deleteSupabaseProduct
+};

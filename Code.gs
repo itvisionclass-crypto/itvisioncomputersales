@@ -45,6 +45,77 @@ function doGet(e) {
 }
 
 /**
+ * HTTP POST Entry Point for Media Uploads (Photos, Videos, Audios)
+ * Direct upload engine saving files to Google Drive
+ */
+function doPost(e) {
+  try {
+    var payload;
+    if (e && e.postData && e.postData.contents) {
+      try {
+        payload = JSON.parse(e.postData.contents);
+      } catch (parseErr) {
+        payload = e.parameter;
+      }
+    } else if (e && e.parameter) {
+      payload = e.parameter;
+    } else {
+      payload = {};
+    }
+
+    var base64Data = payload.base64 || payload.data || payload.file;
+    if (!base64Data) {
+      return ContentService.createTextOutput(JSON.stringify({
+        success: false,
+        error: "Missing base64 file data in payload."
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // Strip data URL scheme prefix if present
+    if (base64Data.indexOf("base64,") !== -1) {
+      base64Data = base64Data.split("base64,")[1];
+    }
+
+    var filename = payload.filename || ("itv_media_" + Date.now());
+    var mimeType = payload.mimeType || "application/octet-stream";
+
+    var decoded = Utilities.base64Decode(base64Data);
+    var blob = Utilities.newBlob(decoded, mimeType, filename);
+
+    // Save to Google Drive IT_Vision_Assets -> Product_Images folder
+    var rootFolder = DriveApp.getRootFolder();
+    var appFolder = getOrCreateFolder(rootFolder, FOLDERS.ROOT);
+    var targetFolder = getOrCreateFolder(appFolder, FOLDERS.IMAGES);
+
+    var file = targetFolder.createFile(blob);
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+    var fileId = file.getId();
+    var directUrl = "https://lh3.googleusercontent.com/d/" + fileId + "=w800-rw";
+
+    var output = {
+      success: true,
+      fileId: fileId,
+      filename: filename,
+      mimeType: mimeType,
+      fileUrl: file.getUrl(),
+      directUrl: directUrl,
+      downloadUrl: file.getDownloadUrl(),
+      message: "Media file uploaded successfully to Google Drive."
+    };
+
+    return ContentService.createTextOutput(JSON.stringify(output))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({
+      success: false,
+      error: "Upload handler error: " + err.toString()
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+/**
  * File inclusion helper for modular templates
  */
 function include(filename) {

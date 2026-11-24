@@ -9,6 +9,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Supabase JS Client & Media Upload Engine -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabaseAdapter.js"></script>
   
   <style>
     /* ==========================================================================
@@ -1849,25 +1852,103 @@
           </table>
         </div>
 
-        <!-- Inventory Multi-Branch Editor Table -->
+        <!-- Google Drive Media Upload Engine (Photos, Videos, Audios) -->
+        <div class="admin-table-box" style="background:#F8FAFC; border:2px dashed var(--color-primary-navy);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <div>
+              <h4 style="color:var(--color-primary-navy); font-size:15px; font-weight:800;">
+                📁 Google Drive Media Upload Engine (Photos, Videos, Audios)
+              </h4>
+              <p style="font-size:11px; color:var(--color-text-secondary); margin-top:2px;">
+                Direct Google Drive Endpoint: <code style="background:#E2E8F0; padding:2px 6px; border-radius:3px;">https://script.google.com/macros/s/AKfycbwa3D0RyEZl50W6IDGijCKcaL7qbSBm9q4W05yy4l7G5LRIZ9fQvww6j-PVkGoQ7ID53g/exec</code>
+              </p>
+            </div>
+            <span class="badge-highlight" style="background:var(--color-success-green);">Zero-Cost Drive CDN</span>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr; gap:12px; margin-bottom:12px;">
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+              <input type="file" id="admin-media-file-input" accept="image/*,video/*,audio/*" class="form-ctrl-sm" style="flex:1; min-width:260px; height:auto; padding:6px;">
+              <button type="button" class="btn-checkout-confirm" style="width:auto; height:36px; padding:0 20px; background:var(--color-primary-navy);" onclick="handleAdminMediaUpload()">
+                ☁️ Upload to Google Drive
+              </button>
+            </div>
+            <div id="media-upload-status" style="font-size:11px; font-weight:600; color:var(--color-text-secondary);">
+              Ready to upload media. Supported: JPG, PNG, WEBP, MP4, MP3, WAV.
+            </div>
+            <div id="media-preview-container" style="display:none; padding:10px; background:#FFFFFF; border:1px solid var(--color-border-hairline); border-radius:6px;">
+              <!-- Preview rendered here -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Supabase Products Management Form (Only Entity in Supabase) -->
         <div class="admin-table-box">
-          <h4 style="margin-bottom:12px; color:var(--color-primary-navy);">Hardware Catalog &amp; Multi-Branch Stock Table</h4>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid var(--color-border-hairline); padding-bottom:8px;">
+            <div>
+              <h4 style="color:var(--color-primary-navy); font-size:15px; font-weight:800;">
+                ⚡ Supabase Products Database (mztnzrpfpszfieooeprj)
+              </h4>
+              <p style="font-size:11px; color:var(--color-text-secondary);">
+                Relational schema: <code>id</code>, <code>name</code>, <code>price</code>, <code>photos_link (URL)</code>, <code>description</code>, <code>available_pcs</code>
+              </p>
+            </div>
+            <button class="btn-bulk-step" style="padding:4px 12px; height:auto;" onclick="refreshSupabaseProductsTable()">
+              🔄 Sync with Supabase
+            </button>
+          </div>
+
+          <!-- Product Entry Form -->
+          <form id="admin-product-form" onsubmit="handleSaveProductToSupabase(event)" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-bottom:20px; background:var(--color-bg-subtle); padding:16px; border-radius:8px;">
+            <div class="form-group-sm">
+              <label>Product ID (*PK):</label>
+              <input type="text" id="prod-form-id" class="form-ctrl-sm" placeholder="e.g. ITV-PROD-011" required>
+            </div>
+            <div class="form-group-sm">
+              <label>Product Name:</label>
+              <input type="text" id="prod-form-name" class="form-ctrl-sm" placeholder="e.g. HP LaserJet 1020 Plus" required>
+            </div>
+            <div class="form-group-sm">
+              <label>Price (₹):</label>
+              <input type="number" id="prod-form-price" class="form-ctrl-sm" placeholder="e.g. 9499" step="0.01" required>
+            </div>
+            <div class="form-group-sm">
+              <label>Available Pieces:</label>
+              <input type="number" id="prod-form-stock" class="form-ctrl-sm" placeholder="e.g. 25" min="0" required>
+            </div>
+            <div class="form-group-sm" style="grid-column:1 / -1;">
+              <label>Photos / Media Link (Google Drive URL):</label>
+              <input type="url" id="prod-form-photolink" class="form-ctrl-sm" placeholder="https://lh3.googleusercontent.com/d/..." required>
+            </div>
+            <div class="form-group-sm" style="grid-column:1 / -1;">
+              <label>Description:</label>
+              <textarea id="prod-form-description" class="form-ctrl-sm" style="height:60px; padding:6px 10px;" placeholder="Full product specifications, warranty info, and condition notes..." required></textarea>
+            </div>
+            <div style="grid-column:1 / -1; display:flex; gap:10px;">
+              <button type="submit" class="btn-checkout-confirm" style="width:auto; padding:0 24px; background:var(--color-success-green);">
+                💾 Save Product to Supabase
+              </button>
+              <button type="button" class="btn-hero-secondary" style="background:#E2E8F0; color:#0F172A;" onclick="resetProductForm()">
+                Clear Form
+              </button>
+            </div>
+          </form>
+
+          <!-- Supabase Products Live Table -->
+          <h5 style="margin-bottom:10px; color:var(--color-text-primary);">Current Supabase Products Catalog</h5>
           <table class="admin-table">
             <thead>
               <tr>
-                <th>SKU</th>
-                <th>Title</th>
-                <th>Selling Price</th>
-                <th>Prantij (HO)</th>
-                <th>Talod</th>
-                <th>Ranasan</th>
-                <th>Chiloda</th>
-                <th>Dhansura</th>
-                <th>Kheda</th>
-                <th>Action</th>
+                <th style="width:12%;">ID</th>
+                <th style="width:12%;">Media Photo</th>
+                <th style="width:24%;">Product Name</th>
+                <th style="width:12%;">Price (₹)</th>
+                <th style="width:26%;">Description</th>
+                <th style="width:8%;">Avail Pcs</th>
+                <th style="width:6%;">Action</th>
               </tr>
             </thead>
-            <tbody id="admin-inventory-tbody">
+            <tbody id="admin-supabase-products-tbody">
               <!-- Rendered via JS -->
             </tbody>
           </table>
@@ -2255,9 +2336,41 @@
     }
 
     /**
-     * Hydrate catalog from sessionStorage or Google Apps Script RPC
+     * Hydrate catalog from Supabase, sessionStorage, or Google Apps Script RPC
      */
-    function initCatalogData() {
+    async function initCatalogData() {
+      // 1. Try Supabase first if connected
+      try {
+        if (window.ITVisionSupabase && window.ITVisionSupabase.fetchProducts) {
+          var supaProducts = await window.ITVisionSupabase.fetchProducts();
+          if (supaProducts && supaProducts.length > 0) {
+            window.ITVisionState.catalogCache = supaProducts.map(function(p) {
+              return {
+                id: p.id,
+                product_id: p.id,
+                name: p.name,
+                title: p.name,
+                price: Number(p.price),
+                selling_price: Number(p.price),
+                mrp_price: Math.round(Number(p.price) * 1.3),
+                category: "Hardware",
+                condition: "Certified",
+                photos_link: p.photos_link,
+                description: p.description,
+                available_pcs: Number(p.available_pcs),
+                stock: { total: Number(p.available_pcs) }
+              };
+            });
+            sessionStorage.setItem("ITV_CATALOG_CACHE", JSON.stringify(window.ITVisionState.catalogCache));
+            renderProductGrid(window.ITVisionState.catalogCache);
+            return;
+          }
+        }
+      } catch (supaErr) {
+        console.warn("Supabase fetch notice:", supaErr);
+      }
+
+      // 2. Try sessionStorage cache
       var cached = sessionStorage.getItem("ITV_CATALOG_CACHE");
       if (cached) {
         try {
@@ -2269,7 +2382,7 @@
         }
       }
 
-      // Check if running in Google Apps Script context
+      // 3. Check if running in Google Apps Script context
       if (typeof google !== "undefined" && google.script && google.script.run) {
         google.script.run
           .withSuccessHandler(function(response) {
@@ -2318,64 +2431,73 @@
       var html = "";
       for (var i = 0; i < items.length; i++) {
         var p = items[i];
-        var branchStock = p.stock && p.stock[branchKey] !== undefined ? p.stock[branchKey] : 5;
-        var discountPct = Math.round(((p.mrp_price - p.selling_price) / p.mrp_price) * 100);
+        var pid = p.id || p.product_id;
+        var ptitle = p.name || p.title;
+        var pprice = p.price !== undefined ? Number(p.price) : Number(p.selling_price);
+        var pmrp = p.mrp_price ? Number(p.mrp_price) : Math.round(pprice * 1.35);
+        var pstock = p.available_pcs !== undefined ? Number(p.available_pcs) : 
+                     (p.stock && p.stock[branchKey] !== undefined ? p.stock[branchKey] : (p.stock && p.stock.total !== undefined ? p.stock.total : 5));
+        var pcategory = p.category || "Hardware";
+        var pcondition = p.condition || "Certified";
 
-        var conditionBadgeClass = p.condition.toLowerCase().includes("refurb") ? "badge-refurb" : "badge-new";
-        var stockDotClass = branchStock > 5 ? "" : (branchStock > 0 ? "low" : "out");
-        var stockText = branchStock > 0 ? `In Stock (${branchStock} at ${curBranch})` : `Out of Stock at ${curBranch}`;
+        var discountPct = pmrp > pprice ? Math.round(((pmrp - pprice) / pmrp) * 100) : 15;
+        var conditionBadgeClass = pcondition.toLowerCase().includes("refurb") ? "badge-refurb" : "badge-new";
+        var stockDotClass = pstock > 5 ? "" : (pstock > 0 ? "low" : "out");
+        var stockText = pstock > 0 ? `In Stock (${pstock} Available)` : `Out of Stock`;
 
-        // Extract 3 specs
+        // Description / Spec Chips
         var specChipsHtml = "";
         if (p.specs) {
           var keys = Object.keys(p.specs).slice(0, 3);
           for (var k = 0; k < keys.length; k++) {
             specChipsHtml += `<span class="spec-pill">${p.specs[keys[k]]}</span>`;
           }
+        } else if (p.description) {
+          specChipsHtml = `<span class="spec-pill" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:220px;">${p.description}</span>`;
         }
 
-        var imgUrl = formatDriveImageUrl(p.drive_image_id, 300);
+        var imgUrl = p.photos_link ? p.photos_link : formatDriveImageUrl(p.drive_image_id, 300);
 
         html += `
           <div class="product-card">
             <div>
               <div class="card-badge-row">
-                <span class="condition-badge ${conditionBadgeClass}">${p.condition}</span>
+                <span class="condition-badge ${conditionBadgeClass}">${pcondition}</span>
                 <span class="discount-pill">-${discountPct}% OFF</span>
               </div>
               <div class="card-thumb-wrap">
-                <img src="${imgUrl}" alt="${p.title}" loading="lazy">
+                <img src="${imgUrl}" alt="${ptitle}" loading="lazy" onerror="this.src='https://via.placeholder.com/300?text=IT+Vision+Media'">
               </div>
-              <div class="card-category-label">${p.category}</div>
-              <div class="card-product-title" title="${p.title}">${p.title}</div>
+              <div class="card-category-label">${pcategory}</div>
+              <div class="card-product-title" title="${ptitle}">${ptitle}</div>
               <div class="card-specs-row">${specChipsHtml}</div>
             </div>
 
             <div>
               <div class="card-price-stack">
-                <div class="price-mrp-line tabular">MRP: ₹${p.mrp_price.toLocaleString('en-IN')}</div>
+                <div class="price-mrp-line tabular">MRP: ₹${pmrp.toLocaleString('en-IN')}</div>
                 <div class="price-selling-line">
-                  <span class="sale-price-num tabular">₹${p.selling_price.toLocaleString('en-IN')}</span>
+                  <span class="sale-price-num tabular">₹${pprice.toLocaleString('en-IN')}</span>
                   <span class="gst-tag">Inc. GST</span>
                 </div>
               </div>
 
               <div class="card-stock-indicator">
                 <span class="pulsing-dot ${stockDotClass}"></span>
-                <span style="color:${branchStock > 0 ? 'var(--color-text-secondary)' : 'var(--color-danger-red)'}; font-size:10px;">${stockText}</span>
+                <span style="color:${pstock > 0 ? 'var(--color-text-secondary)' : 'var(--color-danger-red)'}; font-size:10px;">${stockText}</span>
               </div>
 
               <div class="bulk-stepper-row">
-                <button class="btn-bulk-step" onclick="quickAdd('${p.product_id}', 1)">+1</button>
-                <button class="btn-bulk-step" onclick="quickAdd('${p.product_id}', 5)">+5</button>
-                <button class="btn-bulk-step" onclick="quickAdd('${p.product_id}', 10)">+10</button>
+                <button class="btn-bulk-step" onclick="quickAdd('${pid}', 1)">+1</button>
+                <button class="btn-bulk-step" onclick="quickAdd('${pid}', 5)">+5</button>
+                <button class="btn-bulk-step" onclick="quickAdd('${pid}', 10)">+10</button>
               </div>
 
               <div class="card-btn-group">
-                <button class="btn-add-cart" onclick="quickAdd('${p.product_id}', 1)">
+                <button class="btn-add-cart" onclick="quickAdd('${pid}', 1)">
                   <span>🛒 Add to Cart</span>
                 </button>
-                <button class="btn-wa-inquiry" onclick="openWhatsAppQuote('${p.product_id}', '${encodeURIComponent(p.title)}')" title="Direct WhatsApp Quote">
+                <button class="btn-wa-inquiry" onclick="openWhatsAppQuote('${pid}', '${encodeURIComponent(ptitle)}')" title="Direct WhatsApp Quote">
                   💬
                 </button>
               </div>
@@ -2843,7 +2965,7 @@
     }
 
     function loadAdminDashboardData() {
-      // Hydrate mock admin tables
+      // Hydrate mock admin orders queue
       var ordersBody = document.getElementById("admin-orders-tbody");
       if (ordersBody) {
         ordersBody.innerHTML = `
@@ -2868,29 +2990,222 @@
         `;
       }
 
-      var invBody = document.getElementById("admin-inventory-tbody");
-      if (invBody) {
-        var catalog = window.ITVisionState.catalogCache || DEFAULT_MASTER_CATALOG;
-        var rows = "";
-        for (var i = 0; i < Math.min(catalog.length, 6); i++) {
-          var itm = catalog[i];
-          rows += `
-            <tr>
-              <td><code>${itm.product_id}</code></td>
-              <td>${itm.title}</td>
-              <td class="tabular">₹${itm.selling_price}</td>
-              <td class="tabular">${itm.stock.prantij}</td>
-              <td class="tabular">${itm.stock.talod}</td>
-              <td class="tabular">${itm.stock.ranasan}</td>
-              <td class="tabular">${itm.stock.chiloda}</td>
-              <td class="tabular">${itm.stock.dhansura}</td>
-              <td class="tabular">${itm.stock.kheda}</td>
-              <td><button class="btn-bulk-step" onclick="alert('Stock Saved!')">Save</button></td>
-            </tr>
-          `;
-        }
-        invBody.innerHTML = rows;
+      // Hydrate Supabase Products Table
+      refreshSupabaseProductsTable();
+    }
+
+    /**
+     * Google Drive Media Upload Handler
+     * Endpoint: https://script.google.com/macros/s/AKfycbwa3D0RyEZl50W6IDGijCKcaL7qbSBm9q4W05yy4l7G5LRIZ9fQvww6j-PVkGoQ7ID53g/exec
+     */
+    async function handleAdminMediaUpload() {
+      var fileInput = document.getElementById("admin-media-file-input");
+      var statusEl = document.getElementById("media-upload-status");
+      var previewEl = document.getElementById("media-preview-container");
+
+      if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+        alert("Please select a photo, video, or audio file to upload.");
+        return;
       }
+
+      var file = fileInput.files[0];
+      statusEl.innerHTML = `<span style="color:var(--color-primary-navy);">⏳ Uploading ${file.name} to Google Drive...</span>`;
+
+      try {
+        var uploadResult;
+        if (window.ITVisionSupabase && window.ITVisionSupabase.uploadMedia) {
+          uploadResult = await window.ITVisionSupabase.uploadMedia(file, function(msg) {
+            statusEl.innerText = msg;
+          });
+        } else {
+          // Direct fallback uploader
+          uploadResult = await uploadMediaToGoogleDrive(file, function(msg) {
+            statusEl.innerText = msg;
+          });
+        }
+
+        var mediaUrl = uploadResult.directUrl || uploadResult.fileUrl;
+        statusEl.innerHTML = `
+          <span style="color:var(--color-success-green); font-weight:700;">
+            ✔ Uploaded to Google Drive successfully!
+          </span>
+          <br>Link: <a href="${mediaUrl}" target="_blank" style="color:var(--color-primary-navy); text-decoration:underline;">${mediaUrl}</a>
+        `;
+
+        // Auto-fill Product Form's Photos Link
+        var photoInput = document.getElementById("prod-form-photolink");
+        if (photoInput) {
+          photoInput.value = mediaUrl;
+        }
+
+        // Render preview
+        if (previewEl) {
+          previewEl.style.display = "block";
+          if (file.type.startsWith("image/")) {
+            previewEl.innerHTML = `
+              <div style="font-size:11px; margin-bottom:4px; font-weight:700;">Media Preview:</div>
+              <img src="${mediaUrl}" style="max-height:120px; border-radius:4px; border:1px solid #CBD5E1;">
+            `;
+          } else if (file.type.startsWith("video/")) {
+            previewEl.innerHTML = `
+              <div style="font-size:11px; margin-bottom:4px; font-weight:700;">Video Preview:</div>
+              <video src="${mediaUrl}" controls style="max-height:120px; max-width:100%; border-radius:4px;"></video>
+            `;
+          } else if (file.type.startsWith("audio/")) {
+            previewEl.innerHTML = `
+              <div style="font-size:11px; margin-bottom:4px; font-weight:700;">Audio Preview:</div>
+              <audio src="${mediaUrl}" controls style="width:100%;"></audio>
+            `;
+          }
+        }
+
+      } catch (err) {
+        statusEl.innerHTML = `<span style="color:var(--color-danger-red);">❌ Upload failed: ${err.message}</span>`;
+      }
+    }
+
+    /**
+     * Supabase Products Operations (Only Table in Database)
+     */
+    async function handleSaveProductToSupabase(event) {
+      if (event) event.preventDefault();
+
+      var product = {
+        id: document.getElementById("prod-form-id").value.trim(),
+        name: document.getElementById("prod-form-name").value.trim(),
+        price: parseFloat(document.getElementById("prod-form-price").value),
+        photos_link: document.getElementById("prod-form-photolink").value.trim(),
+        description: document.getElementById("prod-form-description").value.trim(),
+        available_pcs: parseInt(document.getElementById("prod-form-stock").value, 10) || 0
+      };
+
+      if (!product.id || !product.name || isNaN(product.price)) {
+        alert("Please enter valid Product ID, Name, and Price.");
+        return;
+      }
+
+      try {
+        if (window.ITVisionSupabase && window.ITVisionSupabase.saveProduct) {
+          await window.ITVisionSupabase.saveProduct(product);
+        }
+
+        // Update local catalog cache
+        var catalog = window.ITVisionState.catalogCache || [];
+        var idx = catalog.findIndex(p => (p.id || p.product_id) === product.id);
+        var mapped = {
+          id: product.id,
+          product_id: product.id,
+          name: product.name,
+          title: product.name,
+          price: product.price,
+          selling_price: product.price,
+          mrp_price: Math.round(product.price * 1.35),
+          category: "Hardware",
+          condition: "Certified",
+          photos_link: product.photos_link,
+          description: product.description,
+          available_pcs: product.available_pcs,
+          stock: { total: product.available_pcs }
+        };
+
+        if (idx !== -1) {
+          catalog[idx] = mapped;
+        } else {
+          catalog.unshift(mapped);
+        }
+
+        window.ITVisionState.catalogCache = catalog;
+        sessionStorage.setItem("ITV_CATALOG_CACHE", JSON.stringify(catalog));
+
+        alert(`✔ Product "${product.name}" saved to Supabase successfully!`);
+        resetProductForm();
+        refreshSupabaseProductsTable();
+        renderProductGrid(catalog);
+
+      } catch (err) {
+        alert("Failed to save product to Supabase: " + err.message);
+      }
+    }
+
+    async function refreshSupabaseProductsTable() {
+      var tbody = document.getElementById("admin-supabase-products-tbody");
+      if (!tbody) return;
+
+      var products = [];
+      try {
+        if (window.ITVisionSupabase && window.ITVisionSupabase.fetchProducts) {
+          var res = await window.ITVisionSupabase.fetchProducts();
+          if (res && res.length > 0) products = res;
+        }
+      } catch (e) {
+        console.warn("Could not fetch from live Supabase, using local catalog.");
+      }
+
+      if (products.length === 0) {
+        products = (window.ITVisionState.catalogCache || DEFAULT_MASTER_CATALOG).map(function(p) {
+          return {
+            id: p.id || p.product_id,
+            name: p.name || p.title,
+            price: p.price !== undefined ? p.price : p.selling_price,
+            photos_link: p.photos_link || (p.drive_image_id ? formatDriveImageUrl(p.drive_image_id, 80) : ""),
+            description: p.description || (p.specs ? JSON.stringify(p.specs) : ""),
+            available_pcs: p.available_pcs !== undefined ? p.available_pcs : (p.stock ? p.stock.total : 10)
+          };
+        });
+      }
+
+      var rows = "";
+      for (var i = 0; i < products.length; i++) {
+        var p = products[i];
+        var thumb = p.photos_link ? `<img src="${p.photos_link}" style="width:40px; height:40px; object-fit:contain; border-radius:4px; border:1px solid #CBD5E1;">` : `<span style="font-size:10px; color:#94A3B8;">No Photo</span>`;
+
+        rows += `
+          <tr>
+            <td><code>${p.id}</code></td>
+            <td>${thumb}</td>
+            <td><strong>${p.name}</strong></td>
+            <td class="tabular">₹${Number(p.price).toLocaleString('en-IN')}</td>
+            <td><span style="font-size:11px; color:var(--color-text-secondary); line-height:1.3; display:block; max-height:40px; overflow:hidden;">${p.description}</span></td>
+            <td class="tabular" style="font-weight:700; text-align:center;">${p.available_pcs}</td>
+            <td>
+              <button class="btn-bulk-step" style="color:var(--color-danger-red); border-color:#FCA5A5;" onclick="handleDeleteProduct('${p.id}')">&times; Del</button>
+            </td>
+          </tr>
+        `;
+      }
+
+      tbody.innerHTML = rows;
+    }
+
+    async function handleDeleteProduct(productId) {
+      if (!confirm(`Are you sure you want to remove product ${productId} from Supabase?`)) {
+        return;
+      }
+
+      try {
+        if (window.ITVisionSupabase && window.ITVisionSupabase.deleteProduct) {
+          await window.ITVisionSupabase.deleteProduct(productId);
+        }
+
+        var catalog = (window.ITVisionState.catalogCache || []).filter(p => (p.id || p.product_id) !== productId);
+        window.ITVisionState.catalogCache = catalog;
+        sessionStorage.setItem("ITV_CATALOG_CACHE", JSON.stringify(catalog));
+
+        refreshSupabaseProductsTable();
+        renderProductGrid(catalog);
+        alert(`Product ${productId} deleted.`);
+      } catch (err) {
+        alert("Delete failed: " + err.message);
+      }
+    }
+
+    function resetProductForm() {
+      var form = document.getElementById("admin-product-form");
+      if (form) form.reset();
+      var preview = document.getElementById("media-preview-container");
+      if (preview) preview.style.display = "none";
+      var status = document.getElementById("media-upload-status");
+      if (status) status.innerText = "Ready to upload media. Supported: JPG, PNG, WEBP, MP4, MP3, WAV.";
     }
 
     /**

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>IT Vision Tax Invoice</title>
+  <style>
+    body {
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 30px;
+      color: #0F172A;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .header-table {
+      width: 100%;
+      border-bottom: 2px solid #0F4C81;
+      padding-bottom: 15px;
+      margin-bottom: 20px;
+    }
+    .brand-title {
+      font-size: 22px;
+      font-weight: bold;
+      color: #0F4C81;
+      margin: 0;
+    }
+    .brand-sub {
+      font-size: 11px;
+      color: #475569;
+      margin-top: 3px;
+    }
+    .invoice-badge {
+      text-align: right;
+    }
+    .invoice-title {
+      font-size: 20px;
+      font-weight: bold;
+      color: #0F4C81;
+      letter-spacing: 1px;
+    }
+    .meta-box {
+      width: 100%;
+      margin-bottom: 25px;
+    }
+    .meta-col {
+      width: 50%;
+      vertical-align: top;
+    }
+    .section-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      font-weight: bold;
+      color: #64748B;
+      margin-bottom: 5px;
+      letter-spacing: 0.5px;
+    }
+    .items-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 25px;
+    }
+    .items-table th {
+      background-color: #0F4C81;
+      color: #FFFFFF;
+      text-align: left;
+      padding: 8px 10px;
+      font-size: 11px;
+      text-transform: uppercase;
+    }
+    .items-table td {
+      border-bottom: 1px solid #E2E8F0;
+      padding: 10px;
+      font-size: 12px;
+    }
+    .text-right {
+      text-align: right;
+    }
+    .tabular {
+      font-variant-numeric: tabular-nums;
+      font-family: monospace, sans-serif;
+    }
+    .total-box {
+      width: 100%;
+      margin-bottom: 30px;
+    }
+    .total-col-left {
+      width: 55%;
+      vertical-align: top;
+      font-size: 11px;
+      color: #475569;
+    }
+    .total-col-right {
+      width: 45%;
+      vertical-align: top;
+    }
+    .summary-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .summary-table td {
+      padding: 5px 8px;
+    }
+    .grand-total-row {
+      background-color: #EBF3FA;
+      font-weight: bold;
+      font-size: 14px;
+      color: #0F4C81;
+    }
+    .footer {
+      border-top: 1px solid #E2E8F0;
+      padding-top: 15px;
+      font-size: 10px;
+      color: #64748B;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Company Header -->
+  <table class="header-table">
+    <tr>
+      <td>
+        <div class="brand-title">IT VISION COMPUTER SALES &amp; SERVICE</div>
+        <div class="brand-sub">Dwarkeshwar IT Educare | GST Registered Multi-Branch Hub</div>
+        <div class="brand-sub">Prantij (HO) &bull; Talod &bull; Ranasan &bull; Mota Chiloda &bull; Dhansura &bull; Kheda</div>
+        <div class="brand-sub">Helpline / WhatsApp: +91 9924253384 | Web: itvision.co.in</div>
+      </td>
+      <td class="invoice-badge">
+        <div class="invoice-title">TAX INVOICE / RECEIPT</div>
+        <div style="font-size:12px; font-weight:bold; color:#0F172A; margin-top:4px;">
+          Invoice #: <?= order.orderId ?>
+        </div>
+        <div style="font-size:11px; color:#64748B;">Date: <?= order.timestamp ?></div>
+      </td>
+    </tr>
+  </table>
+
+  <!-- Customer & Fulfillment Metadata -->
+  <table class="meta-box">
+    <tr>
+      <td class="meta-col">
+        <div class="section-title">Billed To (Customer Details)</div>
+        <div style="font-weight:bold; font-size:13px;"><?= order.customerName || "Walk-in Customer" ?></div>
+        <div>Contact: <?= order.customerPhone || "N/A" ?></div>
+        <div>Payment Mode: UPI QR (Direct Transfer)</div>
+        <div>UTR Reference: <span class="tabular"><?= order.utrNumber || "Verified at Store" ?></span></div>
+      </td>
+      <td class="meta-col">
+        <div class="section-title">Fulfillment &amp; Location</div>
+        <div>Fulfillment Branch: <strong><?= order.fulfillmentBranch || "Prantij (HO)" ?></strong></div>
+        <div>Delivery Method: Store Pickup / Priority Regional Dispatch</div>
+        <div>Service Center: IT Vision Dwarkeshwar Hub</div>
+      </td>
+    </tr>
+  </table>
+
+  <!-- Itemized Breakdown Table -->
+  <table class="items-table">
+    <thead>
+      <tr>
+        <th style="width: 8%;">#</th>
+        <th style="width: 52%;">Item Description &amp; Specifications</th>
+        <th class="text-right" style="width: 12%;">Qty</th>
+        <th class="text-right" style="width: 14%;">Rate (₹)</th>
+        <th class="text-right" style="width: 14%;">Amount (₹)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <? for (var i = 0; i < order.items.length; i++) { 
+           var itm = order.items[i];
+           var lineTotal = (itm.qty * itm.price);
+      ?>
+      <tr>
+        <td><?= (i + 1) ?></td>
+        <td>
+          <strong><?= itm.title || itm.productId ?></strong>
+          <div style="font-size:11px; color:#64748B;">SKU: <?= itm.productId ?></div>
+        </td>
+        <td class="text-right tabular"><?= itm.qty ?></td>
+        <td class="text-right tabular"><?= Number(itm.price).toFixed(2) ?></td>
+        <td class="text-right tabular"><?= lineTotal.toFixed(2) ?></td>
+      </tr>
+      <? } ?>
+    </tbody>
+  </table>
+
+  <!-- Calculation & Totals Summary -->
+  <table class="total-box">
+    <tr>
+      <td class="total-col-left">
+        <strong>Terms &amp; Warranty Conditions:</strong>
+        <ol style="padding-left:16px; margin:4px 0;">
+          <li>Refurbished Desktops &amp; Combos include 1 Year Store Warranty.</li>
+          <li>Printers &amp; Laptops carry 6 Months Comprehensive Hardware Warranty.</li>
+          <li>Toner Cartridges carry a 100% Dark Print Testing Guarantee.</li>
+          <li>Physical damage, liquid spills, or lightning surges void warranty.</li>
+        </ol>
+      </td>
+      <td class="total-col-right">
+        <table class="summary-table">
+          <tr>
+            <td>Subtotal:</td>
+            <td class="text-right tabular">₹<?= Number(order.totalAmount).toFixed(2) ?></td>
+          </tr>
+          <tr>
+            <td>GST (18% Included):</td>
+            <td class="text-right tabular">₹<?= (order.totalAmount * 0.18 / 1.18).toFixed(2) ?></td>
+          </tr>
+          <tr>
+            <td>Regional Handling:</td>
+            <td class="text-right tabular">FREE</td>
+          </tr>
+          <tr class="grand-total-row">
+            <td>TOTAL AMOUNT PAYABLE:</td>
+            <td class="text-right tabular">₹<?= Number(order.totalAmount).toFixed(2) ?></td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+
+  <!-- Official Stamp / Footer -->
+  <div class="footer">
+    This is an automated system generated commercial invoice issued by IT Vision Computer Sales and Service.
+    <br>For repair warranties and customer support: Contact <strong>+91 9924253384</strong> or visit your nearest branch.
+  </div>
+
+</body>
+</html>

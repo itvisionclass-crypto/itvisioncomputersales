@@ -2,7 +2,7 @@
  * IT VISION COMPUTER SALES, SERVICE & ACCESSORIES
  * Serverless Backend Engine (Google Apps Script)
  * 
- * Branches: Prantij (Head Office), Talod, Ranasan, Mota Chiloda, Dhansura, Kheda (Gujarat)
+ * Branches: Prantij (Head Office), Talod, Ranasan, Mota Chiloda, Dhansura, Kheda
  * Support & WhatsApp: +91 9924253384 | UPI: 9924253384@paytm
  */
 
@@ -38,7 +38,7 @@ function doGet(e) {
   var output = template.evaluate()
     .setTitle("IT Vision Computer Sales, Service & Accessories")
     .addMetaTag("viewport", "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no")
-    .addMetaTag("description", "High-performance B2B/B2C computer hardware, refurbished systems, laser printers & repairs across 6 Gujarat branches.")
+    .addMetaTag("description", "High-performance B2B/B2C computer hardware, refurbished systems, laser printers & repairs across 6 regional branches.")
     .addMetaTag("theme-color", "#0F4C81")
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
   return output;
@@ -282,7 +282,7 @@ function seedProductionData() {
       850, 420, 380, 340,
       50, 20, 15, 25, 10, 15,
       "1sampleDriveImgIdKbMs",
-      JSON.stringify({ "Interface": "USB Plug & Play", "Keys": "104 Key Rupee Symbol", "DPI": "1200 DPI Optical", "Warranty": "1 Year Replacement" }),
+      JSON.stringify({ "Interface": "USB Plug & Play", "Keys": "104-Key Standard English QWERTY", "DPI": "1200 DPI Optical", "Warranty": "1 Year Replacement" }),
       "ACTIVE"
     ],
     [
@@ -545,7 +545,7 @@ function sendOrderReceiptEmail(email, orderId, total, invoiceUrl) {
       "<p>Payment Method: UPI QR (Pending UTR Verification).</p>" +
       (invoiceUrl ? "<p><a href='" + invoiceUrl + "' style='background:#0F4C81;color:#fff;padding:8px 16px;text-decoration:none;border-radius:4px;'>Download PDF Invoice</a></p>" : "") +
       "<hr style='border:1px solid #E2E8F0;'/>" +
-      "<p style='font-size:12px;color:#64748B;'>Helpline: +91 9924253384 | Prantij Head Office & 5 Regional Gujarat Branches</p>" +
+      "<p style='font-size:12px;color:#64748B;'>Helpline: +91 9924253384 | Prantij Head Office & 5 Regional Branches</p>" +
       "</div>";
     
     MailApp.sendEmail({

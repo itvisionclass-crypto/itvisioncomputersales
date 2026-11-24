@@ -116,7 +116,7 @@ INSERT INTO public.products (id, name, price, photos_link, description, availabl
     'Pro-Grade USB Keyboard & Optical Mouse Combo',
     420.00,
     'https://lh3.googleusercontent.com/d/1sampleDriveImgIdKbMs=w600-rw',
-    '104 Key Rupee layout keyboard, 1200 DPI optical mouse, USB plug and play, 1 Year Replacement Warranty.',
+    '104-Key standard English QWERTY keyboard, 1200 DPI optical mouse, USB plug and play, 1 Year Replacement Warranty.',
     135
 ),
 (

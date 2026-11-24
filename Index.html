@@ -1852,36 +1852,6 @@
           </table>
         </div>
 
-        <!-- Google Drive Media Upload Engine (Photos, Videos, Audios) -->
-        <div class="admin-table-box" style="background:#F8FAFC; border:2px dashed var(--color-primary-navy);">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-            <div>
-              <h4 style="color:var(--color-primary-navy); font-size:15px; font-weight:800;">
-                📁 Google Drive Media Upload Engine (Photos, Videos, Audios)
-              </h4>
-              <p style="font-size:11px; color:var(--color-text-secondary); margin-top:2px;">
-                Direct Google Drive Endpoint: <code style="background:#E2E8F0; padding:2px 6px; border-radius:3px;">https://script.google.com/macros/s/AKfycbwa3D0RyEZl50W6IDGijCKcaL7qbSBm9q4W05yy4l7G5LRIZ9fQvww6j-PVkGoQ7ID53g/exec</code>
-              </p>
-            </div>
-            <span class="badge-highlight" style="background:var(--color-success-green);">Zero-Cost Drive CDN</span>
-          </div>
-
-          <div style="display:grid; grid-template-columns:1fr; gap:12px; margin-bottom:12px;">
-            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-              <input type="file" id="admin-media-file-input" accept="image/*,video/*,audio/*" class="form-ctrl-sm" style="flex:1; min-width:260px; height:auto; padding:6px;">
-              <button type="button" class="btn-checkout-confirm" style="width:auto; height:36px; padding:0 20px; background:var(--color-primary-navy);" onclick="handleAdminMediaUpload()">
-                ☁️ Upload to Google Drive
-              </button>
-            </div>
-            <div id="media-upload-status" style="font-size:11px; font-weight:600; color:var(--color-text-secondary);">
-              Ready to upload media. Supported: JPG, PNG, WEBP, MP4, MP3, WAV.
-            </div>
-            <div id="media-preview-container" style="display:none; padding:10px; background:#FFFFFF; border:1px solid var(--color-border-hairline); border-radius:6px;">
-              <!-- Preview rendered here -->
-            </div>
-          </div>
-        </div>
-
         <!-- Supabase Products Management Form (Only Entity in Supabase) -->
         <div class="admin-table-box">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid var(--color-border-hairline); padding-bottom:8px;">
@@ -1898,7 +1868,7 @@
             </button>
           </div>
 
-          <!-- Product Entry Form -->
+          <!-- Product Entry Form with Integrated Google Drive Media Upload & Autodetect -->
           <form id="admin-product-form" onsubmit="handleSaveProductToSupabase(event)" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-bottom:20px; background:var(--color-bg-subtle); padding:16px; border-radius:8px;">
             <div class="form-group-sm">
               <label>Product ID (*PK):</label>
@@ -1916,10 +1886,34 @@
               <label>Available Pieces:</label>
               <input type="number" id="prod-form-stock" class="form-ctrl-sm" placeholder="e.g. 25" min="0" required>
             </div>
-            <div class="form-group-sm" style="grid-column:1 / -1;">
-              <label>Photos / Media Link (Google Drive URL):</label>
-              <input type="url" id="prod-form-photolink" class="form-ctrl-sm" placeholder="https://lh3.googleusercontent.com/d/..." required>
+
+            <!-- Integrated Photos / Media Link with Google Drive Upload & Autodetect -->
+            <div class="form-group-sm" style="grid-column:1 / -1; background:#FFFFFF; border:1px solid var(--color-border-hairline); border-radius:6px; padding:12px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <label style="font-weight:700; color:var(--color-primary-navy);">
+                  📁 Photos / Media Link (Google Drive URL) &bull; <span style="color:var(--color-success-green);">Autodetect Enabled</span>
+                </label>
+                <span style="font-size:10px; color:#64748B;">Supported: Images, Videos, Audio files</span>
+              </div>
+
+              <!-- Upload Directly to Drive Script -->
+              <div style="display:flex; gap:10px; align-items:center; margin-bottom:8px; flex-wrap:wrap;">
+                <input type="file" id="form-media-file-input" accept="image/*,video/*,audio/*" class="form-ctrl-sm" style="flex:1; min-width:220px; height:auto; padding:5px;" onchange="handleAutoMediaUpload(this)">
+                <span style="font-size:11px; color:#64748B; font-weight:600;">OR Paste Link Below</span>
+              </div>
+
+              <!-- Direct URL Input with Automatic Normalization on Paste/Input -->
+              <input type="url" id="prod-form-photolink" class="form-ctrl-sm" placeholder="https://lh3.googleusercontent.com/d/... (Auto-detected upon file selection or link paste)" oninput="handleAutoDetectLink(this.value)" required>
+
+              <!-- Progress & Autodetect Feedback -->
+              <div id="form-media-upload-status" style="font-size:11px; font-weight:600; color:var(--color-text-secondary); margin-top:4px;">
+                Select photo/video/audio to automatically upload to Google Drive, or paste any Drive link.
+              </div>
+
+              <!-- Live Media Preview -->
+              <div id="form-media-preview" style="display:none; margin-top:8px; padding:6px; background:var(--color-bg-subtle); border-radius:4px;"></div>
             </div>
+
             <div class="form-group-sm" style="grid-column:1 / -1;">
               <label>Description:</label>
               <textarea id="prod-form-description" class="form-ctrl-sm" style="height:60px; padding:6px 10px;" placeholder="Full product specifications, warranty info, and condition notes..." required></textarea>
@@ -2995,21 +2989,19 @@
     }
 
     /**
-     * Google Drive Media Upload Handler
+     * Automatic Google Drive Media Upload & Link Autodetect Engine
+     * Embedded directly inside the Product Form
      * Endpoint: https://script.google.com/macros/s/AKfycbwa3D0RyEZl50W6IDGijCKcaL7qbSBm9q4W05yy4l7G5LRIZ9fQvww6j-PVkGoQ7ID53g/exec
      */
-    async function handleAdminMediaUpload() {
-      var fileInput = document.getElementById("admin-media-file-input");
-      var statusEl = document.getElementById("media-upload-status");
-      var previewEl = document.getElementById("media-preview-container");
-
-      if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
-        alert("Please select a photo, video, or audio file to upload.");
-        return;
-      }
-
+    async function handleAutoMediaUpload(fileInput) {
+      if (!fileInput || !fileInput.files || fileInput.files.length === 0) return;
       var file = fileInput.files[0];
-      statusEl.innerHTML = `<span style="color:var(--color-primary-navy);">⏳ Uploading ${file.name} to Google Drive...</span>`;
+      var statusEl = document.getElementById("form-media-upload-status");
+      var photoInput = document.getElementById("prod-form-photolink");
+      var previewEl = document.getElementById("form-media-preview");
+
+      var detectedKind = file.type.startsWith("video/") ? "video" : (file.type.startsWith("audio/") ? "audio" : "photo");
+      statusEl.innerHTML = `<span style="color:var(--color-primary-navy);">⏳ Autodetecting ${detectedKind} &amp; uploading "${file.name}" to Google Drive...</span>`;
 
       try {
         var uploadResult;
@@ -3018,49 +3010,94 @@
             statusEl.innerText = msg;
           });
         } else {
-          // Direct fallback uploader
           uploadResult = await uploadMediaToGoogleDrive(file, function(msg) {
             statusEl.innerText = msg;
           });
         }
 
         var mediaUrl = uploadResult.directUrl || uploadResult.fileUrl;
+        
+        // Autodetect & set link in form input
+        photoInput.value = mediaUrl;
+
         statusEl.innerHTML = `
           <span style="color:var(--color-success-green); font-weight:700;">
-            ✔ Uploaded to Google Drive successfully!
+            ✔ Autodetected &amp; Uploaded ${detectedKind.toUpperCase()} to Google Drive!
           </span>
-          <br>Link: <a href="${mediaUrl}" target="_blank" style="color:var(--color-primary-navy); text-decoration:underline;">${mediaUrl}</a>
+          <br><span style="font-size:10px; color:#475569;">URL: ${mediaUrl}</span>
         `;
 
-        // Auto-fill Product Form's Photos Link
-        var photoInput = document.getElementById("prod-form-photolink");
-        if (photoInput) {
-          photoInput.value = mediaUrl;
-        }
-
-        // Render preview
-        if (previewEl) {
-          previewEl.style.display = "block";
-          if (file.type.startsWith("image/")) {
-            previewEl.innerHTML = `
-              <div style="font-size:11px; margin-bottom:4px; font-weight:700;">Media Preview:</div>
-              <img src="${mediaUrl}" style="max-height:120px; border-radius:4px; border:1px solid #CBD5E1;">
-            `;
-          } else if (file.type.startsWith("video/")) {
-            previewEl.innerHTML = `
-              <div style="font-size:11px; margin-bottom:4px; font-weight:700;">Video Preview:</div>
-              <video src="${mediaUrl}" controls style="max-height:120px; max-width:100%; border-radius:4px;"></video>
-            `;
-          } else if (file.type.startsWith("audio/")) {
-            previewEl.innerHTML = `
-              <div style="font-size:11px; margin-bottom:4px; font-weight:700;">Audio Preview:</div>
-              <audio src="${mediaUrl}" controls style="width:100%;"></audio>
-            `;
-          }
-        }
+        // Render live preview
+        renderMediaPreview(mediaUrl, file.type, previewEl);
 
       } catch (err) {
         statusEl.innerHTML = `<span style="color:var(--color-danger-red);">❌ Upload failed: ${err.message}</span>`;
+      }
+    }
+
+    /**
+     * Autodetect & Convert Google Drive Links on paste/input
+     */
+    function handleAutoDetectLink(inputVal) {
+      if (!inputVal) return;
+      var str = inputVal.trim();
+      var previewEl = document.getElementById("form-media-preview");
+      var statusEl = document.getElementById("form-media-upload-status");
+      var photoInput = document.getElementById("prod-form-photolink");
+
+      var detectedUrl = autodetectDriveUrl(str);
+      if (detectedUrl !== str) {
+        photoInput.value = detectedUrl;
+        if (statusEl) {
+          statusEl.innerHTML = `<span style="color:var(--color-success-green); font-weight:700;">✔ Autodetected Google Drive File ID &amp; converted to high-speed CDN streaming link!</span>`;
+        }
+      }
+
+      renderMediaPreview(photoInput.value, "image/*", previewEl);
+    }
+
+    function autodetectDriveUrl(str) {
+      if (!str) return "";
+      // Already an edge CDN URL
+      if (str.includes("lh3.googleusercontent.com/d/")) {
+        return str;
+      }
+      // Pattern: /file/d/{FILE_ID}/
+      var fileMatch = str.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+      if (fileMatch && fileMatch[1]) {
+        return "https://lh3.googleusercontent.com/d/" + fileMatch[1] + "=w800-rw";
+      }
+      // Pattern: id={FILE_ID}
+      var idMatch = str.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+      if (idMatch && idMatch[1]) {
+        return "https://lh3.googleusercontent.com/d/" + idMatch[1] + "=w800-rw";
+      }
+      // Raw Google Drive File ID (25+ characters alphanumeric)
+      if (/^[a-zA-Z0-9_-]{25,}$/.test(str)) {
+        return "https://lh3.googleusercontent.com/d/" + str + "=w800-rw";
+      }
+      return str;
+    }
+
+    function renderMediaPreview(url, mimeType, previewContainer) {
+      if (!previewContainer || !url) return;
+      previewContainer.style.display = "block";
+
+      if (mimeType && mimeType.startsWith("video/")) {
+        previewContainer.innerHTML = `
+          <div style="font-size:10px; font-weight:700; color:#0F4C81; margin-bottom:3px;">Autodetected Video Preview:</div>
+          <video src="${url}" controls style="max-height:110px; max-width:100%; border-radius:4px; border:1px solid #CBD5E1;"></video>
+        `;
+      } else if (mimeType && mimeType.startsWith("audio/")) {
+        previewContainer.innerHTML = `
+          <div style="font-size:10px; font-weight:700; color:#0F4C81; margin-bottom:3px;">Autodetected Audio Preview:</div>
+          <audio src="${url}" controls style="width:100%;"></audio>
+        `;
+      } else {
+        previewContainer.innerHTML = `
+          <div style="font-size:10px; font-weight:700; color:#0F4C81; margin-bottom:3px;">Autodetected Photo Preview:</div>
+          <img src="${url}" style="max-height:110px; max-width:140px; object-fit:contain; border-radius:4px; border:1px solid #CBD5E1;" onerror="this.style.display='none'">
+        `;
       }
     }
 
@@ -3202,10 +3239,15 @@
     function resetProductForm() {
       var form = document.getElementById("admin-product-form");
       if (form) form.reset();
-      var preview = document.getElementById("media-preview-container");
-      if (preview) preview.style.display = "none";
-      var status = document.getElementById("media-upload-status");
-      if (status) status.innerText = "Ready to upload media. Supported: JPG, PNG, WEBP, MP4, MP3, WAV.";
+      var preview = document.getElementById("form-media-preview");
+      if (preview) {
+        preview.innerHTML = "";
+        preview.style.display = "none";
+      }
+      var fileInput = document.getElementById("form-media-file-input");
+      if (fileInput) fileInput.value = "";
+      var status = document.getElementById("form-media-upload-status");
+      if (status) status.innerText = "Select photo/video/audio to automatically upload to Google Drive, or paste any Drive link.";
     }
 
     /**

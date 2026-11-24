@@ -98,18 +98,29 @@ async function uploadMediaToGoogleDrive(file, onStatusUpdate) {
           return;
         }
 
-        // 2. HTTP POST fallback for Localhost / External Web App
-        const response = await fetch(IT_VISION_CONFIG.MEDIA_UPLOAD_ENDPOINT, {
+        // Determine upload endpoint: use local proxy if on localhost/127.0.0.1 to prevent CORS errors
+        const isLocalHost = typeof window !== "undefined" && 
+          (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.port === "3000");
+        const uploadEndpoint = isLocalHost ? "/api/upload-media" : IT_VISION_CONFIG.MEDIA_UPLOAD_ENDPOINT;
+
+        if (onStatusUpdate) onStatusUpdate(`Uploading ${file.name} to ${isLocalHost ? 'Server Proxy / Google Drive' : 'Google Drive'}...`);
+
+        // 2. HTTP POST via Local Proxy or Google Apps Script Web App
+        const response = await fetch(uploadEndpoint, {
           method: "POST",
           headers: {
-            "Content-Type": "text/plain;charset=utf-8"
+            "Content-Type": "application/json"
           },
           body: JSON.stringify(payload)
         });
 
+        if (!response.ok) {
+          throw new Error(`Server returned HTTP ${response.status}: ${response.statusText}`);
+        }
+
         const result = await response.json();
 
-        // Support various Google Apps Script response formats
+        // Support various Google Apps Script & Local Proxy response formats
         if (result && (result.success || result.status === "success" || result.fileUrl || result.directUrl || result.url)) {
           let directUrl = result.directUrl;
           if (!directUrl && result.url) {
@@ -123,18 +134,24 @@ async function uploadMediaToGoogleDrive(file, onStatusUpdate) {
             directUrl = `https://lh3.googleusercontent.com/d/${result.fileId}=w800-rw`;
           }
 
-          if (onStatusUpdate) onStatusUpdate(`✔ Uploaded successfully to Google Drive!`);
+          const statusMsg = result.warning ?
+            `✔ Uploaded! (${result.warning})` :
+            `✔ Uploaded successfully!`;
+
+          if (onStatusUpdate) onStatusUpdate(statusMsg);
           
           resolve({
             success: true,
             status: "success",
+            source: result.source || "google_drive",
             fileId: result.fileId || "",
             fileUrl: result.fileUrl || result.url || directUrl,
             directUrl: directUrl,
-            filename: file.name
+            filename: result.filename || file.name,
+            warning: result.warning || null
           });
         } else {
-          throw new Error(result.error || result.message || "Upload failed from Google Apps Script.");
+          throw new Error(result.error || result.message || "Upload failed from storage service.");
         }
       } catch (err) {
         console.error("Media upload error:", err);

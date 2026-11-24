@@ -3020,10 +3020,12 @@
         // Autodetect & set link in form input
         photoInput.value = mediaUrl;
 
+        var statusHtml = uploadResult.warning ? 
+          `<span style="color:#D97706; font-weight:700;">✔ Autodetected &amp; Uploaded ${detectedKind.toUpperCase()} (Saved locally)</span><br><span style="font-size:11px; color:#64748B;">ℹ ${uploadResult.warning}</span>` :
+          `<span style="color:var(--color-success-green); font-weight:700;">✔ Autodetected &amp; Uploaded ${detectedKind.toUpperCase()} to Google Drive!</span>`;
+
         statusEl.innerHTML = `
-          <span style="color:var(--color-success-green); font-weight:700;">
-            ✔ Autodetected &amp; Uploaded ${detectedKind.toUpperCase()} to Google Drive!
-          </span>
+          ${statusHtml}
           <br><span style="font-size:10px; color:#475569;">URL: ${mediaUrl}</span>
         `;
 

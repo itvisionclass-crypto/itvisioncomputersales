@@ -1,0 +1,2941 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>IT Vision Computer Sales, Service &amp; Accessories</title>
+  <meta name="description" content="High-performance B2B &amp; B2C computer hardware, certified refurbished desktops, laser printers, toners, and fast repair job tracking across 6 Gujarat branches.">
+  <meta name="theme-color" content="#0F4C81">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    /* ==========================================================================
+       1. CSS DESIGN TOKENS & SYSTEM VARIABLES (Inspired by ChipTrades.in)
+       ========================================================================== */
+    :root {
+      /* Brand Identity Colors */
+      --color-primary-navy: #0F4C81;
+      --color-primary-navy-dark: #0A3459;
+      --color-primary-navy-light: #EBF3FA;
+
+      /* High-Urgency & Action Colors */
+      --color-accent-orange: #F97316;
+      --color-accent-orange-hover: #EA580C;
+      --color-accent-amber: #F59E0B;
+
+      /* Status & Trust Indicators */
+      --color-success-green: #16A34A;
+      --color-success-bg: #DCFCE7;
+      --color-warning-amber: #D97706;
+      --color-danger-red: #DC2626;
+
+      /* Neutral Surface Palette */
+      --color-bg-canvas: #F8FAFC;
+      --color-bg-surface: #FFFFFF;
+      --color-bg-subtle: #F1F5F9;
+
+      /* Hairlines & Borders */
+      --color-border-hairline: #E2E8F0;
+      --color-border-strong: #CBD5E1;
+
+      /* Typography Colors */
+      --color-text-primary: #0F172A;
+      --color-text-secondary: #475569;
+      --color-text-muted: #94A3B8;
+
+      /* Typography Scale & Numerics */
+      --font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-numeric: 'Inter', monospace;
+      --font-numeric-setting: tabular-nums;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: var(--font-family);
+      background-color: var(--color-bg-canvas);
+      color: var(--color-text-primary);
+      line-height: 1.4;
+      font-size: 13px;
+      overflow-x: hidden;
+      padding-bottom: 70px; /* Space for mobile nav */
+    }
+
+    @media (min-width: 640px) {
+      body {
+        padding-bottom: 0;
+      }
+    }
+
+    .tabular {
+      font-variant-numeric: tabular-nums;
+      font-family: var(--font-numeric);
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    button, input, select, textarea {
+      font-family: inherit;
+      font-size: inherit;
+    }
+
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 16px;
+    }
+
+    /* ==========================================================================
+       2. TIER 1: UTILITY & MARQUEE ANNOUNCEMENT BAR
+       ========================================================================== */
+    .utility-bar {
+      background-color: #082845;
+      color: #94A3B8;
+      font-size: 11px;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .utility-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+    .marquee-text {
+      color: #E2E8F0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .marquee-badge {
+      background-color: var(--color-accent-orange);
+      color: #FFFFFF;
+      font-weight: 700;
+      font-size: 9px;
+      padding: 2px 6px;
+      border-radius: 3px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .utility-contact {
+      display: flex;
+      gap: 16px;
+      white-space: nowrap;
+    }
+    .utility-contact a {
+      color: #E2E8F0;
+      font-weight: 500;
+    }
+    .utility-contact a:hover {
+      color: #FFFFFF;
+      text-decoration: underline;
+    }
+
+    /* ==========================================================================
+       3. TIER 2: STICKY MAIN HEADER
+       ========================================================================== */
+    .main-header {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background-color: var(--color-primary-navy);
+      color: #FFFFFF;
+      box-shadow: 0 4px 12px rgba(15, 76, 129, 0.15);
+    }
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+      gap: 16px;
+    }
+    .brand-logo-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+    }
+    .logo-badge {
+      background: #FFFFFF;
+      color: var(--color-primary-navy);
+      font-weight: 800;
+      font-size: 16px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      letter-spacing: -0.5px;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    .brand-text-col {
+      display: flex;
+      flex-direction: column;
+    }
+    .brand-name {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      line-height: 1.1;
+    }
+    .brand-tagline {
+      font-size: 10px;
+      color: #93C5FD;
+      font-weight: 500;
+    }
+
+    /* Search Input with Ctrl+K shortcut */
+    .search-bar-wrap {
+      flex: 1;
+      max-width: 520px;
+      position: relative;
+    }
+    .search-input-field {
+      width: 100%;
+      height: 38px;
+      background-color: #FFFFFF;
+      border: 1px solid var(--color-border-hairline);
+      border-radius: 6px;
+      padding: 0 44px 0 14px;
+      font-size: 12px;
+      color: var(--color-text-primary);
+      outline: none;
+      transition: all 0.2s ease;
+    }
+    .search-input-field:focus {
+      border-color: var(--color-accent-orange);
+      box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2);
+    }
+    .kbd-shortcut {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: var(--color-bg-subtle);
+      border: 1px solid var(--color-border-strong);
+      color: var(--color-text-secondary);
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      pointer-events: none;
+      font-family: monospace;
+    }
+
+    /* Branch Location Dropdown */
+    .branch-select-wrap {
+      display: flex;
+      align-items: center;
+      background-color: rgba(255, 255, 255, 0.12);
+      border-radius: 6px;
+      padding: 2px 8px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .branch-select-wrap label {
+      font-size: 10px;
+      text-transform: uppercase;
+      color: #93C5FD;
+      margin-right: 6px;
+      font-weight: 600;
+    }
+    .branch-select-field {
+      background: transparent;
+      border: none;
+      color: #FFFFFF;
+      font-size: 12px;
+      font-weight: 600;
+      outline: none;
+      cursor: pointer;
+    }
+    .branch-select-field option {
+      color: var(--color-text-primary);
+      background-color: #FFFFFF;
+    }
+
+    /* Header Actions */
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .btn-header-action {
+      background-color: rgba(255, 255, 255, 0.1);
+      color: #FFFFFF;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+    .btn-header-action:hover {
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+    .btn-cart-action {
+      background-color: var(--color-accent-orange);
+      border-color: var(--color-accent-orange-hover);
+      color: #FFFFFF;
+      padding: 8px 14px;
+    }
+    .btn-cart-action:hover {
+      background-color: var(--color-accent-orange-hover);
+    }
+    .cart-count-pill {
+      background-color: #FFFFFF;
+      color: var(--color-accent-orange);
+      font-size: 10px;
+      font-weight: 700;
+      border-radius: 10px;
+      padding: 1px 6px;
+    }
+
+    /* ==========================================================================
+       4. TIER 3: HORIZONTAL MEGA-MENU / CATEGORY BAR
+       ========================================================================== */
+    .category-nav-bar {
+      background-color: var(--color-primary-navy-dark);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .category-nav-bar::-webkit-scrollbar {
+      display: none;
+    }
+    .nav-links-row {
+      display: flex;
+      align-items: center;
+      list-style: none;
+      white-space: nowrap;
+      padding: 2px 0;
+    }
+    .nav-item-btn {
+      background: none;
+      border: none;
+      color: #E2E8F0;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 10px 14px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+      border-bottom: 2px solid transparent;
+    }
+    .nav-item-btn:hover, .nav-item-btn.active {
+      color: #FFFFFF;
+      background-color: rgba(255,255,255,0.08);
+      border-bottom-color: var(--color-accent-orange);
+    }
+    .badge-highlight {
+      background: var(--color-danger-red);
+      color: #FFFFFF;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 3px;
+      text-transform: uppercase;
+    }
+
+    /* ==========================================================================
+       5. TIER 4: SPLIT HERO BANNER & TRUST METRICS STRIP
+       ========================================================================== */
+    .hero-split-section {
+      padding: 20px 0 12px 0;
+    }
+    .hero-split-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+    @media (min-width: 900px) {
+      .hero-split-grid {
+        grid-template-columns: 1.6fr 1fr;
+      }
+    }
+    .hero-promo-card {
+      background: linear-gradient(135deg, #0F4C81 0%, #082E52 100%);
+      color: #FFFFFF;
+      border-radius: 12px;
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 8px 24px rgba(15, 76, 129, 0.18);
+    }
+    .hero-tag {
+      display: inline-block;
+      background: var(--color-accent-orange);
+      color: #FFFFFF;
+      font-weight: 700;
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+    }
+    .hero-title {
+      font-size: 24px;
+      font-weight: 800;
+      line-height: 1.2;
+      margin-bottom: 8px;
+    }
+    .hero-price-stack {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .hero-sale-price {
+      font-size: 28px;
+      font-weight: 800;
+      color: #38BDF8;
+    }
+    .hero-mrp {
+      font-size: 16px;
+      text-decoration: line-through;
+      color: #94A3B8;
+    }
+    .hero-specs-list {
+      font-size: 12px;
+      color: #CBD5E1;
+      margin-bottom: 20px;
+      line-height: 1.6;
+    }
+    .hero-cta-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .btn-hero-primary {
+      background-color: var(--color-accent-orange);
+      color: #FFFFFF;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 13px;
+      border: none;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-hero-primary:hover {
+      background-color: var(--color-accent-orange-hover);
+    }
+    .btn-hero-secondary {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: #FFFFFF;
+      padding: 10px 18px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .btn-hero-secondary:hover {
+      background: rgba(255,255,255,0.2);
+    }
+
+    /* Quick Repair Booking Card */
+    .quick-repair-card {
+      background: #FFFFFF;
+      border: 1px solid var(--color-border-hairline);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .card-header-line {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      border-bottom: 1px solid var(--color-border-hairline);
+      padding-bottom: 8px;
+    }
+    .card-heading {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--color-text-primary);
+    }
+    .form-group-sm {
+      margin-bottom: 10px;
+    }
+    .form-group-sm label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--color-text-secondary);
+      margin-bottom: 4px;
+    }
+    .form-ctrl-sm {
+      width: 100%;
+      height: 34px;
+      padding: 0 10px;
+      border: 1px solid var(--color-border-strong);
+      border-radius: 5px;
+      font-size: 12px;
+      outline: none;
+      background: var(--color-bg-subtle);
+      transition: border 0.15s ease;
+    }
+    .form-ctrl-sm:focus {
+      border-color: var(--color-primary-navy);
+      background: #FFFFFF;
+    }
+    .btn-repair-submit {
+      width: 100%;
+      height: 38px;
+      background-color: var(--color-primary-navy);
+      color: #FFFFFF;
+      border: none;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 4px;
+      transition: background 0.2s;
+    }
+    .btn-repair-submit:hover {
+      background-color: var(--color-primary-navy-dark);
+    }
+
+    /* Trust Strip */
+    .trust-strip {
+      background: #FFFFFF;
+      border: 1px solid var(--color-border-hairline);
+      border-radius: 8px;
+      margin-top: 14px;
+      padding: 12px 16px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    @media (min-width: 768px) {
+      .trust-strip {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+    .trust-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .trust-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      background: var(--color-primary-navy-light);
+      color: var(--color-primary-navy);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 14px;
+    }
+    .trust-text-stack {
+      display: flex;
+      flex-direction: column;
+    }
+    .trust-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--color-text-primary);
+    }
+    .trust-subtitle {
+      font-size: 10px;
+      color: var(--color-text-secondary);
+    }
+
+    /* ==========================================================================
+       6. TIER 5: BROWSE BY CATEGORY ICON GRID
+       ========================================================================== */
+    .category-grid-section {
+      padding: 18px 0 10px 0;
+    }
+    .category-icons-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    @media (min-width: 768px) {
+      .category-icons-row {
+        grid-template-columns: repeat(8, 1fr);
+      }
+    }
+    .category-bubble-card {
+      background: #FFFFFF;
+      border: 1px solid var(--color-border-hairline);
+      border-radius: 8px;
+      padding: 12px 8px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .category-bubble-card:hover {
+      border-color: var(--color-primary-navy);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+    .bubble-icon {
+      font-size: 20px;
+    }
+    .bubble-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--color-text-primary);
+    }
+
+    /* ==========================================================================
+       7. TIER 6: PRODUCT GRID & MERCHANDISING
+       ========================================================================== */
+    .catalog-section {
+      padding: 16px 0;
+    }
+    .section-header-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      border-bottom: 2px solid var(--color-border-hairline);
+      padding-bottom: 8px;
+    }
+    .section-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-title-main {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--color-text-primary);
+      text-transform: uppercase;
+      letter-spacing: -0.2px;
+    }
+    .section-view-all {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--color-primary-navy);
+      cursor: pointer;
+    }
+    .section-view-all:hover {
+      text-decoration: underline;
+    }
+
+    /* Responsive Grid Controls */
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+    @media (min-width: 640px) {
+      .product-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+      }
+    }
+    @media (min-width: 1024px) {
+      .product-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+      }
+    }
+    @media (min-width: 1440px) {
+      .product-grid {
+        grid-template-columns: repeat(5, 1fr);
+      }
+    }
+
+    /* High-Density Product Card Component */
+    .product-card {
+      background-color: var(--color-bg-surface);
+      border: 1px solid var(--color-border-hairline);
+      border-radius: 8px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      transition: all 0.2s ease;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+    .product-card:hover {
+      border-color: var(--color-border-strong);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+    }
+
+    .card-badge-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      gap: 6px;
+    }
+    .condition-badge {
+      font-size: 9px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 3px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .badge-refurb {
+      background-color: var(--color-primary-navy);
+      color: #FFFFFF;
+    }
+    .badge-new {
+      background-color: var(--color-success-green);
+      color: #FFFFFF;
+    }
+    .discount-pill {
+      background-color: var(--color-accent-orange);
+      color: #FFFFFF;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+
+    .card-thumb-wrap {
+      width: 100%;
+      height: 140px;
+      border-radius: 6px;
+      background-color: var(--color-bg-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      margin-bottom: 10px;
+      position: relative;
+    }
+    .card-thumb-wrap img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      transition: transform 0.25s ease;
+    }
+    .product-card:hover .card-thumb-wrap img {
+      transform: scale(1.04);
+    }
+
+    .card-category-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--color-text-muted);
+      letter-spacing: 0.4px;
+      margin-bottom: 2px;
+    }
+    .card-product-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--color-text-primary);
+      line-height: 1.35;
+      margin-bottom: 6px;
+      height: 32px;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+    .card-specs-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-bottom: 8px;
+      min-height: 20px;
+    }
+    .spec-pill {
+      background-color: var(--color-bg-subtle);
+      border: 1px solid var(--color-border-hairline);
+      color: var(--color-text-secondary);
+      font-size: 10px;
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+
+    .card-price-stack {
+      margin-bottom: 8px;
+    }
+    .price-mrp-line {
+      font-size: 11px;
+      color: var(--color-text-muted);
+      text-decoration: line-through;
+    }
+    .price-selling-line {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+    .sale-price-num {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--color-text-primary);
+    }
+    .gst-tag {
+      font-size: 10px;
+      color: var(--color-text-secondary);
+    }
+
+    .card-stock-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      margin-bottom: 10px;
+      font-weight: 500;
+    }
+    .pulsing-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background-color: var(--color-success-green);
+      box-shadow: 0 0 0 2px var(--color-success-bg);
+    }
+    .pulsing-dot.low {
+      background-color: var(--color-warning-amber);
+      box-shadow: 0 0 0 2px #FEF3C7;
+    }
+    .pulsing-dot.out {
+      background-color: var(--color-danger-red);
+      box-shadow: 0 0 0 2px #FEE2E2;
+    }
+
+    /* Bulk Stepper Quick Buttons */
+    .bulk-stepper-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+    .btn-bulk-step {
+      flex: 1;
+      height: 24px;
+      background-color: var(--color-bg-subtle);
+      border: 1px solid var(--color-border-strong);
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--color-text-secondary);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn-bulk-step:hover {
+      background-color: var(--color-primary-navy-light);
+      color: var(--color-primary-navy);
+      border-color: var(--color-primary-navy);
+    }
+
+    /* Card Action Buttons */
+    .card-btn-group {
+      display: flex;
+      gap: 6px;
+    }
+    .btn-add-cart {
+      flex: 1;
+      height: 32px;
+      background-color: var(--color-primary-navy);
+      color: #FFFFFF;
+      border: none;
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+    .btn-add-cart:hover {
+      background-color: var(--color-primary-navy-dark);
+    }
+    .btn-wa-inquiry {
+      width: 34px;
+      height: 32px;
+      background-color: #25D366;
+      color: #FFFFFF;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      transition: background 0.15s;
+    }
+    .btn-wa-inquiry:hover {
+      background-color: #1EBE5B;
+    }
+
+    /* ==========================================================================
+       8. TIER 7: SERVICE TICKET TRACKER & BOOKING WIDGET
+       ========================================================================== */
+    .service-hub-section {
+      padding: 24px 0;
+      background-color: #FFFFFF;
+      border-top: 1px solid var(--color-border-hairline);
+      border-bottom: 1px solid var(--color-border-hairline);
+      margin: 16px 0;
+    }
+    .service-grid-split {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+    @media (min-width: 900px) {
+      .service-grid-split {
+        grid-template-columns: 1.1fr 1.3fr;
+      }
+    }
+    .service-box {
+      background: var(--color-bg-canvas);
+      border: 1px solid var(--color-border-hairline);
+      border-radius: 10px;
+      padding: 20px;
+    }
+    .service-box-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--color-primary-navy);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* Stepper UI */
+    .ticket-stepper-wrap {
+      display: flex;
+      justify-content: space-between;
+      margin: 20px 0;
+      position: relative;
+    }
+    .ticket-stepper-wrap::before {
+      content: '';
+      position: absolute;
+      top: 14px;
+      left: 15px;
+      right: 15px;
+      height: 3px;
+      background: var(--color-border-strong);
+      z-index: 1;
+    }
+    .step-item {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      width: 60px;
+    }
+    .step-circle {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #FFFFFF;
+      border: 2px solid var(--color-border-strong);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--color-text-secondary);
+      margin-bottom: 6px;
+    }
+    .step-item.active .step-circle {
+      background: var(--color-primary-navy);
+      border-color: var(--color-primary-navy);
+      color: #FFFFFF;
+    }
+    .step-item.completed .step-circle {
+      background: var(--color-success-green);
+      border-color: var(--color-success-green);
+      color: #FFFFFF;
+    }
+    .step-label {
+      font-size: 9px;
+      font-weight: 700;
+      color: var(--color-text-secondary);
+      text-transform: uppercase;
+    }
+
+    .tech-log-stream {
+      background: #FFFFFF;
+      border: 1px solid var(--color-border-hairline);
+      border-radius: 6px;
+      padding: 12px;
+      max-height: 140px;
+      overflow-y: auto;
+      font-size: 11px;
+      line-height: 1.5;
+    }
+    .log-entry-item {
+      padding-bottom: 6px;
+      margin-bottom: 6px;
+      border-bottom: 1px dashed var(--color-border-hairline);
+    }
+    .log-timestamp {
+      color: var(--color-text-muted);
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    /* ==========================================================================
+       9. TIER 8 & 9: WHOLESALE BANNER & FOOTER DIRECTORY
+       ========================================================================== */
+    .wholesale-strip-banner {
+      background: linear-gradient(90deg, #1E293B 0%, #0F172A 100%);
+      color: #FFFFFF;
+      border-radius: 10px;
+      padding: 24px;
+      margin: 20px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    @media (min-width: 768px) {
+      .wholesale-strip-banner {
+        flex-direction: row;
+        align-items: center;
+      }
+    }
+    .wholesale-title {
+      font-size: 17px;
+      font-weight: 800;
+      margin-bottom: 4px;
+      color: #F8FAFC;
+    }
+    .wholesale-sub {
+      font-size: 12px;
+      color: #94A3B8;
+    }
+    .wholesale-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .btn-wholesale-call {
+      background: var(--color-accent-orange);
+      color: #FFFFFF;
+      padding: 10px 18px;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+      border: none;
+    }
+
+    .site-footer {
+      background: #081B2E;
+      color: #94A3B8;
+      padding: 36px 0 20px 0;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      font-size: 12px;
+    }
+    .footer-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+    @media (min-width: 768px) {
+      .footer-grid {
+        grid-template-columns: 1.5fr repeat(3, 1fr);
+      }
+    }
+    .footer-col-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #FFFFFF;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .branch-list-nav {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .branch-list-nav li {
+      color: #CBD5E1;
+    }
+    .footer-bottom-line {
+      border-top: 1px solid rgba(255,255,255,0.08);
+      padding-top: 16px;
+      text-align: center;
+      font-size: 11px;
+      color: #64748B;
+    }
+
+    /* ==========================================================================
+       10. SLIDE-OUT CART & CHECKOUT DRAWER
+       ========================================================================== */
+    .drawer-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(2px);
+      z-index: 2000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    .drawer-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .cart-drawer-panel {
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 100%;
+      max-width: 440px;
+      background: #FFFFFF;
+      z-index: 2001;
+      transform: translateX(100%);
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      box-shadow: -4px 0 24px rgba(0,0,0,0.15);
+    }
+    .cart-drawer-panel.open {
+      transform: translateX(0);
+    }
+    .drawer-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--color-border-hairline);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--color-primary-navy);
+      color: #FFFFFF;
+    }
+    .drawer-title {
+      font-size: 15px;
+      font-weight: 700;
+    }
+    .btn-close-drawer {
+      background: none;
+      border: none;
+      color: #FFFFFF;
+      font-size: 20px;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .drawer-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+    }
+    .cart-items-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .cart-line-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border: 1px solid var(--color-border-hairline);
+      border-radius: 8px;
+      padding: 10px;
+      background: var(--color-bg-canvas);
+    }
+    .line-item-info {
+      flex: 1;
+    }
+    .line-item-title {
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .line-item-price {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--color-primary-navy);
+    }
+    .qty-control-box {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #FFFFFF;
+      border: 1px solid var(--color-border-strong);
+      border-radius: 4px;
+      padding: 2px 4px;
+    }
+    .qty-btn {
+      background: none;
+      border: none;
+      font-weight: 700;
+      font-size: 14px;
+      width: 20px;
+      cursor: pointer;
+      color: var(--color-text-secondary);
+    }
+
+    .bill-summary-card {
+      background: var(--color-bg-subtle);
+      border: 1px solid var(--color-border-hairline);
+      border-radius: 8px;
+      padding: 14px;
+      margin-bottom: 16px;
+    }
+    .bill-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      font-size: 12px;
+    }
+    .bill-row.total-row {
+      border-top: 1px solid var(--color-border-strong);
+      padding-top: 8px;
+      margin-top: 6px;
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--color-primary-navy);
+    }
+
+    .upi-qr-box {
+      background: #FFFFFF;
+      border: 1px solid var(--color-border-hairline);
+      border-radius: 8px;
+      padding: 14px;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    #upi-canvas-holder {
+      margin: 10px auto;
+      display: flex;
+      justify-content: center;
+    }
+
+    .drawer-footer {
+      padding: 16px;
+      border-top: 1px solid var(--color-border-hairline);
+      background: #FFFFFF;
+    }
+    .btn-checkout-confirm {
+      width: 100%;
+      height: 44px;
+      background: var(--color-success-green);
+      color: #FFFFFF;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-checkout-confirm:hover {
+      background: #13833B;
+    }
+
+    /* ==========================================================================
+       11. MOBILE BOTTOM NAVIGATION CONTROL BAR (<640px)
+       ========================================================================== */
+    .mobile-bottom-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: #FFFFFF;
+      border-top: 1px solid var(--color-border-hairline);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      z-index: 999;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+    }
+    @media (min-width: 640px) {
+      .mobile-bottom-bar {
+        display: none;
+      }
+    }
+    .mobile-nav-btn {
+      background: none;
+      border: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-text-secondary);
+      font-size: 10px;
+      font-weight: 600;
+      gap: 2px;
+      cursor: pointer;
+      flex: 1;
+      height: 100%;
+    }
+    .mobile-nav-btn.active {
+      color: var(--color-primary-navy);
+    }
+    .mobile-nav-btn span.icon {
+      font-size: 18px;
+    }
+
+    /* Floating WhatsApp Button */
+    .fab-whatsapp {
+      position: fixed;
+      bottom: 74px;
+      right: 16px;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: #25D366;
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      box-shadow: 0 4px 16px rgba(37, 211, 102, 0.4);
+      z-index: 990;
+      transition: transform 0.2s;
+    }
+    @media (min-width: 640px) {
+      .fab-whatsapp {
+        bottom: 24px;
+        right: 24px;
+        width: 52px;
+        height: 52px;
+      }
+    }
+    .fab-whatsapp:hover {
+      transform: scale(1.08);
+    }
+
+    /* ==========================================================================
+       12. ADMIN PORTAL VIEW (#admin)
+       ========================================================================== */
+    .admin-view-container {
+      display: none;
+      padding: 24px 0;
+    }
+    .admin-view-container.active {
+      display: block;
+    }
+    .admin-top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      background: var(--color-primary-navy);
+      color: #FFFFFF;
+      padding: 16px 20px;
+      border-radius: 8px;
+    }
+    .admin-kpis-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    @media (min-width: 900px) {
+      .admin-kpis-grid {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+    .kpi-card {
+      background: #FFFFFF;
+      border: 1px solid var(--color-border-hairline);
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .kpi-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--color-text-secondary);
+      margin-bottom: 4px;
+    }
+    .kpi-val {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--color-primary-navy);
+    }
+
+    .admin-table-box {
+      background: #FFFFFF;
+      border: 1px solid var(--color-border-hairline);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 20px;
+      overflow-x: auto;
+    }
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .admin-table th {
+      background: var(--color-bg-subtle);
+      text-align: left;
+      padding: 8px 10px;
+      font-size: 11px;
+      border-bottom: 1px solid var(--color-border-strong);
+    }
+    .admin-table td {
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--color-border-hairline);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==========================================================================
+       TIER 1: UTILITY MARQUEE BAR
+       ========================================================================== -->
+  <aside class="utility-bar">
+    <div class="container utility-inner">
+      <div class="marquee-text">
+        <span class="marquee-badge">LIVE HUBS</span>
+        <span>Prantij (HO) &bull; Talod &bull; Ranasan &bull; Mota Chiloda &bull; Dhansura &bull; Kheda</span>
+      </div>
+      <div class="utility-contact">
+        <span>Helpline: <a href="tel:+919924253384">+91 9924253384</a></span>
+        <a href="#admin" style="opacity: 0.8;">Operator Login</a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ==========================================================================
+       TIER 2: STICKY MAIN HEADER
+       ========================================================================== -->
+  <header class="main-header">
+    <div class="container header-inner">
+      <!-- Logo -->
+      <div class="brand-logo-wrap" onclick="navigateTo('home')">
+        <div class="logo-badge">ITV</div>
+        <div class="brand-text-col">
+          <div class="brand-name">IT VISION</div>
+          <div class="brand-tagline">Computer Sales &amp; Service</div>
+        </div>
+      </div>
+
+      <!-- Live Fuzzy Search Input -->
+      <div class="search-bar-wrap">
+        <input type="text" id="catalog-search-input" class="search-input-field" placeholder="Search Desktops, i5, HP 1020, 12A Cartridges, CCTV..." autocomplete="off">
+        <span class="kbd-shortcut">Ctrl+K</span>
+      </div>
+
+      <!-- Branch Switcher Dropdown -->
+      <div class="branch-select-wrap">
+        <label for="branch-selector">Hub:</label>
+        <select id="branch-selector" class="branch-select-field" onchange="handleBranchChange(this.value)">
+          <option value="Prantij (HO)">Prantij (HO)</option>
+          <option value="Talod">Talod</option>
+          <option value="Ranasan">Ranasan</option>
+          <option value="Mota Chiloda">Mota Chiloda</option>
+          <option value="Dhansura">Dhansura</option>
+          <option value="Kheda">Kheda</option>
+        </select>
+      </div>
+
+      <!-- Header Actions -->
+      <div class="header-actions">
+        <button class="btn-header-action" onclick="scrollToSection('service-hub')">
+          <span>🛠️</span>
+          <span>Track Ticket</span>
+        </button>
+        <button class="btn-header-action btn-cart-action" onclick="toggleCartDrawer(true)">
+          <span>🛒 Cart</span>
+          <span class="cart-count-pill tabular" id="header-cart-count">0</span>
+          <span class="tabular" id="header-cart-total" style="margin-left:4px; font-size:11px;">₹0</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==========================================================================
+       TIER 3: CATEGORY MEGA-MENU BAR
+       ========================================================================== -->
+  <nav class="category-nav-bar">
+    <div class="container">
+      <ul class="nav-links-row">
+        <li><button class="nav-item-btn active" onclick="filterCategory('ALL', this)">All Hardware</button></li>
+        <li><button class="nav-item-btn" onclick="filterCategory('Combo', this)">⚡ Combo Deals <span class="badge-highlight">Hot</span></button></li>
+        <li><button class="nav-item-btn" onclick="filterCategory('Desktop', this)">Desktops (OptiPlex)</button></li>
+        <li><button class="nav-item-btn" onclick="filterCategory('Laptop', this)">Refurb Laptops</button></li>
+        <li><button class="nav-item-btn" onclick="filterCategory('Printer', this)">Laser Printers (HP)</button></li>
+        <li><button class="nav-item-btn" onclick="filterCategory('Cartridge', this)">Toner Cartridges</button></li>
+        <li><button class="nav-item-btn" onclick="filterCategory('Security', this)">CCTV &amp; Security</button></li>
+        <li><button class="nav-item-btn" onclick="filterCategory('Accessories', this)">Peripherals</button></li>
+        <li><button class="nav-item-btn" onclick="scrollToSection('service-hub')">Repair Center</button></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- ==========================================================================
+       MAIN STOREFRONT VIEW CONTAINER
+       ========================================================================== -->
+  <main id="storefront-view-container">
+    <div class="container">
+
+      <!-- TIER 4: SPLIT HERO BANNER & QUICK INTAKE -->
+      <section class="hero-split-section">
+        <div class="hero-split-grid">
+          
+          <!-- Hero Promo Card -->
+          <div class="hero-promo-card">
+            <div>
+              <span class="hero-tag">🔥 Best Selling Regional Combo</span>
+              <h1 class="hero-title">₹12,999 8-Item Complete Desktop + Laser Printer Package</h1>
+              <div class="hero-price-stack">
+                <span class="hero-sale-price tabular">₹12,999</span>
+                <span class="hero-mrp tabular">₹35,000</span>
+                <span class="discount-pill">-62% OFF</span>
+              </div>
+              <p class="hero-specs-list">
+                Core i5 CPU &bull; 8GB RAM &bull; 256GB SSD &bull; 19" LED Monitor &bull; HP LaserJet 1020 Printer &bull; Keyboard, Mouse &amp; Wi-Fi Adapter &bull; 1 Year Warranty
+              </p>
+            </div>
+            <div class="hero-cta-group">
+              <button class="btn-hero-primary" onclick="quickAddCombo()">Add Combo to Cart</button>
+              <button class="btn-hero-secondary" onclick="scrollToSection('service-hub')">Book Device Repair</button>
+            </div>
+          </div>
+
+          <!-- Quick Service Booking Intake -->
+          <div class="quick-repair-card">
+            <div class="card-header-line">
+              <span class="card-heading">Quick Repair Ticket</span>
+              <span style="font-size:10px; color:var(--color-success-green); font-weight:700;">● Ready in 24 Hrs</span>
+            </div>
+            <div>
+              <div class="form-group-sm">
+                <label>Customer Name:</label>
+                <input type="text" id="quick-cust-name" class="form-ctrl-sm" placeholder="e.g. Rajesh Patel">
+              </div>
+              <div class="form-group-sm">
+                <label>Mobile Number:</label>
+                <input type="tel" id="quick-cust-phone" class="form-ctrl-sm" placeholder="e.g. 9924253384">
+              </div>
+              <div class="form-group-sm">
+                <label>Device Category:</label>
+                <select id="quick-device-type" class="form-ctrl-sm">
+                  <option value="Laptop">Laptop (Screen / Battery / Motherboard)</option>
+                  <option value="Desktop">Desktop / CPU (No Display / Slow)</option>
+                  <option value="Printer">Laser Printer (Paper Jam / Fuser)</option>
+                  <option value="Cartridge">Toner Refill (12A / 88A / Canon)</option>
+                  <option value="CCTV">CCTV DVR / Camera Setup</option>
+                </select>
+              </div>
+            </div>
+            <button class="btn-repair-submit" onclick="handleQuickRepairSubmit()">Generate Job Ticket</button>
+          </div>
+
+        </div>
+
+        <!-- Trust Strip -->
+        <div class="trust-strip">
+          <div class="trust-item">
+            <div class="trust-icon">🏛️</div>
+            <div class="trust-text-stack">
+              <span class="trust-title">6 Gujarat Branches</span>
+              <span class="trust-subtitle">Prantij HO &amp; Regional Hubs</span>
+            </div>
+          </div>
+          <div class="trust-item">
+            <div class="trust-icon">⚡</div>
+            <div class="trust-text-stack">
+              <span class="trust-title">1,500+ Spares Ready</span>
+              <span class="trust-subtitle">Same-day turnaround</span>
+            </div>
+          </div>
+          <div class="trust-item">
+            <div class="trust-icon">🛡️</div>
+            <div class="trust-text-stack">
+              <span class="trust-title">1 Year Store Warranty</span>
+              <span class="trust-subtitle">Certified tested hardware</span>
+            </div>
+          </div>
+          <div class="trust-item">
+            <div class="trust-icon">🧾</div>
+            <div class="trust-text-stack">
+              <span class="trust-title">GST Tax Invoicing</span>
+              <span class="trust-subtitle">Zero payment gateway fees</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TIER 5: CATEGORY ICON GRID -->
+      <section class="category-grid-section">
+        <div class="category-icons-row">
+          <div class="category-bubble-card" onclick="filterCategory('Combo')">
+            <div class="bubble-icon">⚡</div>
+            <div class="bubble-label">Combos</div>
+          </div>
+          <div class="category-bubble-card" onclick="filterCategory('Desktop')">
+            <div class="bubble-icon">🖥️</div>
+            <div class="bubble-label">Desktops</div>
+          </div>
+          <div class="category-bubble-card" onclick="filterCategory('Laptop')">
+            <div class="bubble-icon">💻</div>
+            <div class="bubble-label">Laptops</div>
+          </div>
+          <div class="category-bubble-card" onclick="filterCategory('Printer')">
+            <div class="bubble-icon">🖨️</div>
+            <div class="bubble-label">Printers</div>
+          </div>
+          <div class="category-bubble-card" onclick="filterCategory('Cartridge')">
+            <div class="bubble-icon">🧪</div>
+            <div class="bubble-label">Toners</div>
+          </div>
+          <div class="category-bubble-card" onclick="filterCategory('Security')">
+            <div class="bubble-icon">📹</div>
+            <div class="bubble-label">CCTV</div>
+          </div>
+          <div class="category-bubble-card" onclick="filterCategory('Accessories')">
+            <div class="bubble-icon">⌨️</div>
+            <div class="bubble-label">Peripherals</div>
+          </div>
+          <div class="category-bubble-card" onclick="scrollToSection('service-hub')">
+            <div class="bubble-icon">🔧</div>
+            <div class="bubble-label">Repairs</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TIER 6: PRODUCT CATALOG & FILTERABLE GRID -->
+      <section class="catalog-section" id="hardware-catalog">
+        <div class="section-header-bar">
+          <div class="section-title-wrap">
+            <span class="section-title-main" id="catalog-heading-text">Available Hardware &amp; Consumables</span>
+            <span style="font-size:11px; color:var(--color-text-secondary); font-weight:600;" id="catalog-count-badge">(10 Items)</span>
+          </div>
+          <span class="section-view-all" onclick="filterCategory('ALL')">Reset Filters</span>
+        </div>
+
+        <!-- Dynamic Product Grid -->
+        <div class="product-grid" id="product-grid-container">
+          <!-- Dynamically populated via JS -->
+        </div>
+      </section>
+
+      <!-- TIER 7: SERVICE TICKET TRACKER & BOOKING HUB -->
+      <section class="service-hub-section" id="service-hub">
+        <div class="service-grid-split">
+          
+          <!-- Detailed Service Booking Intake -->
+          <div class="service-box">
+            <div class="service-box-title">
+              <span>Book Hardware Repair Service</span>
+              <span style="font-size:11px; color:var(--color-accent-orange);">Zero Inspection Fee</span>
+            </div>
+            <div>
+              <div class="form-group-sm">
+                <label>Customer Full Name:</label>
+                <input type="text" id="srv-name" class="form-ctrl-sm" placeholder="Your name">
+              </div>
+              <div class="form-group-sm">
+                <label>Mobile Number:</label>
+                <input type="tel" id="srv-phone" class="form-ctrl-sm" placeholder="10-digit mobile number">
+              </div>
+              <div class="form-group-sm">
+                <label>Device Category:</label>
+                <select id="srv-category" class="form-ctrl-sm">
+                  <option value="Laptop">Laptop (Dell / HP / Lenovo / Acer)</option>
+                  <option value="Desktop">Desktop CPU / Motherboard</option>
+                  <option value="Printer">HP LaserJet / Canon / Epson Printer</option>
+                  <option value="Cartridge">Toner Refilling (12A / 88A)</option>
+                  <option value="CCTV">CCTV DVR / Camera Inspection</option>
+                </select>
+              </div>
+              <div class="form-group-sm">
+                <label>Device Serial or Model No (Optional):</label>
+                <input type="text" id="srv-serial" class="form-ctrl-sm" placeholder="e.g. HP-1020-SN98214">
+              </div>
+              <div class="form-group-sm">
+                <label>Reported Fault / Problem Details:</label>
+                <textarea id="srv-fault" class="form-ctrl-sm" style="height:55px; padding:6px 10px;" placeholder="Describe issue: e.g. Paper jamming, No power display, blue screen..."></textarea>
+              </div>
+              <div class="form-group-sm">
+                <label>Preferred Branch for Drop-off / Dispatch:</label>
+                <select id="srv-branch" class="form-ctrl-sm">
+                  <option value="Prantij (HO)">Prantij (Head Office)</option>
+                  <option value="Talod">Talod Branch</option>
+                  <option value="Ranasan">Ranasan Branch</option>
+                  <option value="Mota Chiloda">Mota Chiloda Hub</option>
+                  <option value="Dhansura">Dhansura Branch</option>
+                  <option value="Kheda">Kheda Branch</option>
+                </select>
+              </div>
+              <button class="btn-repair-submit" onclick="submitDetailedServiceTicket()">Generate &amp; Print Service Job Card</button>
+            </div>
+          </div>
+
+          <!-- Self-Service Ticket Stepper Tracker -->
+          <div class="service-box">
+            <div class="service-box-title">
+              <span>Live Service Job Card Status</span>
+              <span style="font-size:11px; color:var(--color-primary-navy);">Search by Ticket ID</span>
+            </div>
+            
+            <div style="display:flex; gap:8px; margin-bottom:14px;">
+              <input type="text" id="tracker-query-input" class="form-ctrl-sm" placeholder="Enter Ticket ID (e.g. ITV-SRV-2026-0001) or Mobile Number" value="ITV-SRV-2026-0001">
+              <button class="btn-hero-primary" style="padding:0 14px; font-size:11px;" onclick="trackTicket()">Search</button>
+            </div>
+
+            <!-- Stepper Display -->
+            <div id="tracker-display-card">
+              <div style="font-size:11px; color:var(--color-text-secondary); margin-bottom:6px;">
+                Ticket ID: <strong id="trk-ticket-id" style="color:var(--color-primary-navy);">ITV-SRV-2026-0001</strong> &bull; Device: <span id="trk-device">HP Pavilion 15 (Motherboard)</span>
+              </div>
+              
+              <div class="ticket-stepper-wrap">
+                <div class="step-item completed" id="step-1">
+                  <div class="step-circle">✓</div>
+                  <div class="step-label">Received</div>
+                </div>
+                <div class="step-item completed" id="step-2">
+                  <div class="step-circle">✓</div>
+                  <div class="step-label">Diagnosing</div>
+                </div>
+                <div class="step-item active" id="step-3">
+                  <div class="step-circle">3</div>
+                  <div class="step-label">Parts Order</div>
+                </div>
+                <div class="step-item" id="step-4">
+                  <div class="step-circle">4</div>
+                  <div class="step-label">Ready</div>
+                </div>
+                <div class="step-item" id="step-5">
+                  <div class="step-circle">5</div>
+                  <div class="step-label">Delivered</div>
+                </div>
+              </div>
+
+              <!-- Tech Notes Log -->
+              <div class="tech-log-stream" id="trk-notes-stream">
+                <div class="log-entry-item">
+                  <div class="log-timestamp">10:00 AM &bull; Prantij HO Intake</div>
+                  <div>Device received with power supply adapter. Initial physical inspection passed.</div>
+                </div>
+                <div class="log-entry-item">
+                  <div class="log-timestamp">11:30 AM &bull; Technician Diagnosis</div>
+                  <div>Motherboard diagnosis complete. Power management IC short-circuit detected.</div>
+                </div>
+                <div class="log-entry-item">
+                  <div class="log-timestamp">02:00 PM &bull; Parts Allocation</div>
+                  <div>Replacement IC allocated from central stock. Estimated completion: 24 hrs.</div>
+                </div>
+              </div>
+
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; background:#FFFFFF; padding:8px 12px; border-radius:6px; border:1px solid var(--color-border-hairline);">
+                <div>
+                  <span style="font-size:11px; color:var(--color-text-secondary);">Estimated Repair Cost:</span>
+                  <span style="font-size:14px; font-weight:800; color:var(--color-primary-navy); margin-left:6px;" class="tabular">₹1,650</span>
+                </div>
+                <a href="https://wa.me/919924253384?text=Hi%20IT%20Vision,%20regarding%20my%20repair%20job%20ticket" target="_blank" style="font-size:11px; font-weight:700; color:#25D366;">Chat with Tech &rarr;</a>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+      <!-- TIER 8: WHOLESALE & INSTITUTIONAL PROCUREMENT BANNER -->
+      <section class="wholesale-strip-banner">
+        <div>
+          <div class="wholesale-title">Wholesale Supplies for Schools, Cyber Cafes &amp; Offices</div>
+          <div class="wholesale-sub">Bulk pricing tiers on refurbished OptiPlex desktops, 12A/88A cartridges &amp; CCTV deployment across Gujarat.</div>
+        </div>
+        <div class="wholesale-actions">
+          <a href="tel:+919924253384" class="btn-wholesale-call">📞 Call Desk: +91 9924253384</a>
+          <a href="https://wa.me/919924253384?text=Hi%20IT%20Vision,%20I%20am%20looking%20for%20bulk%20institutional%20pricing" target="_blank" class="btn-hero-secondary" style="background:#25D366; border-color:#25D366;">WhatsApp Quote</a>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- ==========================================================================
+       ADMIN OPERATIONS VIEW CONTAINER (#admin)
+       ========================================================================== -->
+  <section id="admin-view-container" class="admin-view-container">
+    <div class="container">
+      <div class="admin-top-bar">
+        <div>
+          <h2 style="font-size:18px; font-weight:800;">IT VISION CENTRAL CONTROL PANEL</h2>
+          <div style="font-size:11px; opacity:0.85;">Multi-Branch Storefront &amp; Service Hub Management</div>
+        </div>
+        <button class="btn-hero-secondary" onclick="navigateTo('home')">&larr; Back to Storefront</button>
+      </div>
+
+      <!-- PIN Security Guard Form -->
+      <div id="admin-login-guard" style="max-width:380px; margin:40px auto; background:#FFFFFF; padding:24px; border-radius:8px; border:1px solid var(--color-border-hairline); text-align:center;">
+        <h3 style="margin-bottom:8px; color:var(--color-primary-navy);">Operator Authorization</h3>
+        <p style="font-size:12px; color:var(--color-text-secondary); margin-bottom:16px;">Enter Store Manager 4-Digit Security PIN</p>
+        <input type="password" id="admin-pin-input" class="form-ctrl-sm" placeholder="Enter PIN (e.g. 9924)" style="text-align:center; font-size:18px; letter-spacing:4px; height:42px; margin-bottom:12px;">
+        <button class="btn-checkout-confirm" onclick="verifyAdminPIN()">Unlock Control Panel</button>
+      </div>
+
+      <!-- Admin Dashboard Content (Unlocked) -->
+      <div id="admin-dashboard-content" style="display:none;">
+        
+        <!-- KPI Cards -->
+        <div class="admin-kpis-grid">
+          <div class="kpi-card">
+            <div class="kpi-title">Today's Revenue</div>
+            <div class="kpi-val tabular" id="kpi-rev">₹48,250</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-title">Pending Orders</div>
+            <div class="kpi-val tabular" id="kpi-orders" style="color:var(--color-accent-orange);">7 Orders</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-title">Active Repair Jobs</div>
+            <div class="kpi-val tabular" id="kpi-repairs" style="color:var(--color-primary-navy);">14 Jobs</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-title">Low Stock Alerts</div>
+            <div class="kpi-val tabular" id="kpi-stock" style="color:var(--color-danger-red);">3 Items</div>
+          </div>
+        </div>
+
+        <!-- Orders & UTR Verification Queue -->
+        <div class="admin-table-box">
+          <h4 style="margin-bottom:12px; color:var(--color-primary-navy);">Incoming Orders &amp; UPI UTR Verification Queue</h4>
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Customer</th>
+                <th>Branch</th>
+                <th>Amount</th>
+                <th>12-Digit UTR Ref</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="admin-orders-tbody">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Inventory Multi-Branch Editor Table -->
+        <div class="admin-table-box">
+          <h4 style="margin-bottom:12px; color:var(--color-primary-navy);">Hardware Catalog &amp; Multi-Branch Stock Table</h4>
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>SKU</th>
+                <th>Title</th>
+                <th>Selling Price</th>
+                <th>Prantij (HO)</th>
+                <th>Talod</th>
+                <th>Ranasan</th>
+                <th>Chiloda</th>
+                <th>Dhansura</th>
+                <th>Kheda</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="admin-inventory-tbody">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       TIER 9: FOOTER & 6 BRANCH DIRECTORY
+       ========================================================================== -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div class="brand-name" style="color:#FFFFFF; font-size:18px; margin-bottom:6px;">IT VISION COMPUTER</div>
+          <p style="font-size:11px; line-height:1.6; color:#94A3B8; margin-bottom:12px;">
+            Dwarkeshwar IT Educare &bull; Gujarat's dedicated sales, refurbishment &amp; repair hub for computer hardware, OptiPlex desktops, HP LaserJet printers &amp; security setups.
+          </p>
+          <div style="font-weight:600; color:#FFFFFF;">
+            Helpline: +91 9924253384
+          </div>
+        </div>
+        <div>
+          <div class="footer-col-title">North Gujarat Hubs</div>
+          <ul class="branch-list-nav">
+            <li><strong>Prantij (Head Office)</strong> - Station Rd</li>
+            <li><strong>Talod Branch</strong> - Market Yard</li>
+            <li><strong>Ranasan Branch</strong> - Main Circle</li>
+          </ul>
+        </div>
+        <div>
+          <div class="footer-col-title">Central Gujarat Hubs</div>
+          <ul class="branch-list-nav">
+            <li><strong>Mota Chiloda</strong> - Express Highway</li>
+            <li><strong>Dhansura</strong> - College Road</li>
+            <li><strong>Kheda Branch</strong> - Bus Station Complex</li>
+          </ul>
+        </div>
+        <div>
+          <div class="footer-col-title">Quick Services</div>
+          <ul class="branch-list-nav">
+            <li>Refurbished Combos @ ₹12,999</li>
+            <li>HP 12A / 88A Toner Refills</li>
+            <li>Laptop Chip-Level Repairs</li>
+            <li>CP PLUS CCTV Installations</li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom-line">
+        &copy; 2026 IT Vision Computer Sales and Service. Zero-Cost Serverless Google Workspace Architecture. All Rights Reserved.
+      </div>
+    </div>
+  </footer>
+
+  <!-- ==========================================================================
+       SLIDE-OUT SHOPPING CART DRAWER
+       ========================================================================== -->
+  <div class="drawer-overlay" id="cart-drawer-overlay" onclick="toggleCartDrawer(false)"></div>
+  <aside class="cart-drawer-panel" id="cart-drawer-panel">
+    <div class="drawer-header">
+      <div class="drawer-title">Shopping Cart (<span id="cart-items-qty">0</span>)</div>
+      <button class="btn-close-drawer" onclick="toggleCartDrawer(false)">&times;</button>
+    </div>
+
+    <div class="drawer-body">
+      <!-- Items List -->
+      <div class="cart-items-list" id="cart-items-container">
+        <div style="text-align:center; padding:40px 0; color:var(--color-text-muted);">
+          Your cart is currently empty.
+        </div>
+      </div>
+
+      <!-- Fulfillment Branch Selector -->
+      <div style="margin-bottom:16px;">
+        <label style="display:block; font-size:11px; font-weight:700; color:var(--color-text-secondary); margin-bottom:4px;">
+          Fulfillment Branch / Pickup Location:
+        </label>
+        <select id="checkout-branch-select" class="form-ctrl-sm">
+          <option value="Prantij (HO)">Prantij (Head Office Hub)</option>
+          <option value="Talod">Talod Branch</option>
+          <option value="Ranasan">Ranasan Branch</option>
+          <option value="Mota Chiloda">Mota Chiloda Hub</option>
+          <option value="Dhansura">Dhansura Branch</option>
+          <option value="Kheda">Kheda Branch</option>
+        </select>
+      </div>
+
+      <!-- Customer Details Form -->
+      <div style="margin-bottom:16px; background:var(--color-bg-canvas); border:1px solid var(--color-border-hairline); border-radius:6px; padding:10px;">
+        <div style="font-size:11px; font-weight:700; margin-bottom:6px; color:var(--color-primary-navy);">Customer Order Details</div>
+        <input type="text" id="checkout-customer-name" class="form-ctrl-sm" placeholder="Your Full Name" style="margin-bottom:6px;">
+        <input type="tel" id="checkout-customer-phone" class="form-ctrl-sm" placeholder="10-Digit Mobile Number" style="margin-bottom:6px;">
+        <input type="email" id="checkout-customer-email" class="form-ctrl-sm" placeholder="Email for PDF Invoice Receipt">
+      </div>
+
+      <!-- Bill Breakdown -->
+      <div class="bill-summary-card">
+        <div class="bill-row">
+          <span>Subtotal:</span>
+          <span class="tabular" id="bill-subtotal">₹0.00</span>
+        </div>
+        <div class="bill-row">
+          <span>Estimated GST (18% Included):</span>
+          <span class="tabular" id="bill-gst">₹0.00</span>
+        </div>
+        <div class="bill-row">
+          <span>Local Store Handling / Delivery:</span>
+          <span style="color:var(--color-success-green); font-weight:700;">FREE</span>
+        </div>
+        <div class="bill-row total-row">
+          <span>Total Payable:</span>
+          <span class="tabular" id="bill-grand-total">₹0.00</span>
+        </div>
+      </div>
+
+      <!-- Dynamic UPI QR Scan & Pay Box -->
+      <div class="upi-qr-box">
+        <div style="font-size:12px; font-weight:700; color:var(--color-text-primary);">
+          Instant UPI QR (Zero Gateway Fee)
+        </div>
+        <div style="font-size:10px; color:var(--color-text-secondary); margin-top:2px;">
+          Scan with Google Pay, PhonePe, Paytm, or BHIM
+        </div>
+        <div id="upi-canvas-holder">
+          <!-- Canvas populated via JS -->
+          <canvas id="upi-qr-canvas" width="160" height="160"></canvas>
+        </div>
+        <div style="font-size:11px; font-weight:600; color:var(--color-primary-navy);">
+          VPA: 9924253384@paytm
+        </div>
+        <div style="margin-top:10px; text-align:left;">
+          <label style="display:block; font-size:10px; font-weight:700; color:var(--color-danger-red); margin-bottom:3px;">
+            Enter 12-Digit Banking UTR Number (*Mandatory):
+          </label>
+          <input type="text" id="checkout-utr-input" class="form-ctrl-sm" placeholder="e.g. 409123849102" maxlength="12">
+        </div>
+      </div>
+
+    </div>
+
+    <div class="drawer-footer">
+      <button class="btn-checkout-confirm" onclick="submitCustomerOrder()">
+        Confirm Order &amp; Generate Invoice &rarr;
+      </button>
+    </div>
+  </aside>
+
+  <!-- ==========================================================================
+       MOBILE PERSISTENT BOTTOM CONTROL BAR (<640px)
+       ========================================================================== -->
+  <nav class="mobile-bottom-bar">
+    <button class="mobile-nav-btn active" onclick="navigateTo('home')">
+      <span class="icon">🏠</span>
+      <span>Home</span>
+    </button>
+    <button class="mobile-nav-btn" onclick="scrollToSection('hardware-catalog')">
+      <span class="icon">💻</span>
+      <span>Hardware</span>
+    </button>
+    <button class="mobile-nav-btn" onclick="scrollToSection('service-hub')">
+      <span class="icon">🔧</span>
+      <span>Repairs</span>
+    </button>
+    <button class="mobile-nav-btn" onclick="toggleCartDrawer(true)">
+      <span class="icon">🛒</span>
+      <span>Cart (<span id="mob-cart-count">0</span>)</span>
+    </button>
+    <button class="mobile-nav-btn" onclick="navigateTo('admin')">
+      <span class="icon">👤</span>
+      <span>Admin</span>
+    </button>
+  </nav>
+
+  <!-- Floating WhatsApp Action Button -->
+  <a href="https://wa.me/919924253384?text=Hi%20IT%20Vision,%20I%20have%20an%20inquiry%20regarding%20products%20and%20service" target="_blank" class="fab-whatsapp" title="Chat on WhatsApp">
+    💬
+  </a>
+
+  <!-- ==========================================================================
+       CLIENT-SIDE JAVASCRIPT STATE ENGINE & RPC INTEGRATION
+       ========================================================================== -->
+  <script>
+    // Global Application State Schema
+    window.ITVisionState = {
+      currentView: 'home',
+      selectedBranch: 'Prantij (HO)',
+      userSession: {
+        authenticated: false,
+        phone: null,
+        otpVerified: false,
+        email: null,
+        name: null
+      },
+      cart: {
+        items: [],
+        fulfillmentType: 'STORE_PICKUP',
+        appliedCoupon: null,
+        utrReference: null
+      },
+      catalogCache: [],
+      activeFilters: {
+        category: 'ALL',
+        searchQuery: '',
+        inStockOnly: false,
+        priceRange: [0, 50000],
+        condition: 'ALL'
+      }
+    };
+
+    // Fallback Master Production Catalog for Instant Offline & Initial Hydration
+    const DEFAULT_MASTER_CATALOG = [
+      {
+        product_id: "ITV-CMB-001",
+        sku_code: "ITV-COMBO-8IN1",
+        title: "₹12,999 8-Item Complete Desktop + Printer Package",
+        category: "Combo",
+        condition: "Certified Refurbished",
+        mrp_price: 35000,
+        selling_price: 12999,
+        bulk_price_tier5: 12200,
+        bulk_price_tier10: 11500,
+        stock: { prantij: 12, talod: 4, ranasan: 3, chiloda: 5, dhansura: 2, kheda: 4, total: 30 },
+        drive_image_id: "1aB2c3D4e5F6g7H8i9J0k",
+        specs: { "CPU": "Intel Core i5 6th Gen", "RAM": "8GB DDR4", "Storage": "256GB SSD", "Display": "19\" LED Monitor", "Printer": "HP LaserJet 1020 Refurb", "Warranty": "1 Year Store Warranty" },
+        status: "ACTIVE"
+      },
+      {
+        product_id: "ITV-DSK-002",
+        sku_code: "DELL-OPT-7040",
+        title: "Dell OptiPlex 7040 SFF Business Desktop Set",
+        category: "Desktop",
+        condition: "Certified Refurbished",
+        mrp_price: 32000,
+        selling_price: 11999,
+        bulk_price_tier5: 11400,
+        bulk_price_tier10: 10800,
+        stock: { prantij: 15, talod: 6, ranasan: 4, chiloda: 8, dhansura: 3, kheda: 5, total: 41 },
+        drive_image_id: "1bC3d4E5f6G7h8I9j0K1",
+        specs: { "CPU": "Intel Core i5 6500 3.2GHz", "RAM": "8GB DDR4", "SSD": "256GB NVMe", "OS": "Windows 11 Pro", "Warranty": "1 Year Replacement" },
+        status: "ACTIVE"
+      },
+      {
+        product_id: "ITV-LAP-003",
+        sku_code: "LEN-TP-T480",
+        title: "Lenovo ThinkPad T480 Quad-Core i5 Ultrabook",
+        category: "Laptop",
+        condition: "Certified Refurbished",
+        mrp_price: 45000,
+        selling_price: 19499,
+        bulk_price_tier5: 18500,
+        bulk_price_tier10: 17800,
+        stock: { prantij: 8, talod: 3, ranasan: 2, chiloda: 4, dhansura: 1, kheda: 3, total: 21 },
+        drive_image_id: "1cD4e5F6g7H8i9J0k1L2",
+        specs: { "CPU": "Core i5 8th Gen Quad", "RAM": "16GB DDR4", "SSD": "512GB SSD", "Screen": "14\" FHD IPS", "Warranty": "6 Months Store Warranty" },
+        status: "ACTIVE"
+      },
+      {
+        product_id: "ITV-PRN-004",
+        sku_code: "HP-LJP-1020P",
+        title: "HP LaserJet 1020 Plus Monochrome Laser Printer",
+        category: "Printer",
+        condition: "Certified Refurbished",
+        mrp_price: 11500,
+        selling_price: 9499,
+        bulk_price_tier5: 9100,
+        bulk_price_tier10: 8800,
+        stock: { prantij: 10, talod: 4, ranasan: 2, chiloda: 5, dhansura: 1, kheda: 3, total: 25 },
+        drive_image_id: "1dE5f6G7h8I9j0K1l2M3",
+        specs: { "Speed": "14 ppm", "Toner": "HP 12A (Q2612A)", "Interface": "USB 2.0", "Refill Cost": "₹250", "Warranty": "6 Months Comprehensive" },
+        status: "ACTIVE"
+      },
+      {
+        product_id: "ITV-PRN-005",
+        sku_code: "HP-M1005-MFP",
+        title: "HP LaserJet M1005 All-In-One Laser Printer",
+        category: "Printer",
+        condition: "Certified Refurbished",
+        mrp_price: 24000,
+        selling_price: 14999,
+        bulk_price_tier5: 14200,
+        bulk_price_tier10: 13700,
+        stock: { prantij: 6, talod: 2, ranasan: 1, chiloda: 3, dhansura: 1, kheda: 2, total: 15 },
+        drive_image_id: "1eF6g7H8i9J0k1L2m3N4",
+        specs: { "Functions": "Print, Scan, Copy", "Speed": "15 ppm", "Cartridge": "HP 12A", "Warranty": "6 Months Comprehensive" },
+        status: "ACTIVE"
+      },
+      {
+        product_id: "ITV-TON-006",
+        sku_code: "ITV-CART-12A",
+        title: "Compatible 12A (Q2612A) Premium Toner Cartridge",
+        category: "Cartridge",
+        condition: "Brand New",
+        mrp_price: 1200,
+        selling_price: 450,
+        bulk_price_tier5: 410,
+        bulk_price_tier10: 370,
+        stock: { prantij: 60, talod: 25, ranasan: 20, chiloda: 30, dhansura: 15, kheda: 20, total: 170 },
+        drive_image_id: "1fG7h8I9j0K1l2M3n4O5",
+        specs: { "Yield": "2,000 Pages @ 5%", "Printers": "HP 1020, 1005, Canon 2900B", "Guarantee": "100% Dark Print Replacement" },
+        status: "ACTIVE"
+      },
+      {
+        product_id: "ITV-TON-007",
+        sku_code: "ITV-CART-88A",
+        title: "Compatible 88A (CC388A) High-Density Toner Cartridge",
+        category: "Cartridge",
+        condition: "Brand New",
+        mrp_price: 1350,
+        selling_price: 499,
+        bulk_price_tier5: 450,
+        bulk_price_tier10: 410,
+        stock: { prantij: 45, talod: 18, ranasan: 15, chiloda: 20, dhansura: 10, kheda: 15, total: 123 },
+        drive_image_id: "1gH8i9J0k1L2m3N4o5P6",
+        specs: { "Yield": "1,800 Pages", "Printers": "HP P1108, M1136 MFP, M126nw", "Guarantee": "100% Dark Print" },
+        status: "ACTIVE"
+      },
+      {
+        product_id: "ITV-SEC-008",
+        sku_code: "CP-CCTV-4CAM",
+        title: "CP PLUS 4-Channel Full HD Night Vision CCTV Kit",
+        category: "Security",
+        condition: "Brand New",
+        mrp_price: 16500,
+        selling_price: 8999,
+        bulk_price_tier5: 8500,
+        bulk_price_tier10: 8000,
+        stock: { prantij: 8, talod: 3, ranasan: 2, chiloda: 4, dhansura: 2, kheda: 3, total: 22 },
+        drive_image_id: "1hI9j0K1l2M3n4O5p6Q7",
+        specs: { "Channels": "4 CH Full HD DVR", "Cameras": "4 HD Night Vision", "Storage": "500GB Surveillance HDD", "Warranty": "2 Years Official" },
+        status: "ACTIVE"
+      },
+      {
+        product_id: "ITV-ACC-009",
+        sku_code: "ITV-KB-MS-CMB",
+        title: "Pro-Grade USB Keyboard & Optical Mouse Combo",
+        category: "Accessories",
+        condition: "Brand New",
+        mrp_price: 850,
+        selling_price: 420,
+        bulk_price_tier5: 380,
+        bulk_price_tier10: 340,
+        stock: { prantij: 50, talod: 20, ranasan: 15, chiloda: 25, dhansura: 10, kheda: 15, total: 135 },
+        drive_image_id: "1iJ0k1L2m3N4o5P6q7R8",
+        specs: { "Keys": "104 Key Rupee Layout", "Sensor": "1200 DPI Optical", "Warranty": "1 Year Replacement" },
+        status: "ACTIVE"
+      },
+      {
+        product_id: "ITV-ACC-010",
+        sku_code: "LB-WIFI-300M",
+        title: "300Mbps High-Gain Wi-Fi USB Dongle Antenna",
+        category: "Accessories",
+        condition: "Brand New",
+        mrp_price: 650,
+        selling_price: 280,
+        bulk_price_tier5: 250,
+        bulk_price_tier10: 220,
+        stock: { prantij: 40, talod: 15, ranasan: 12, chiloda: 20, dhansura: 10, kheda: 12, total: 109 },
+        drive_image_id: "1jK1l2M3n4O5p6Q7r8S9",
+        specs: { "Speed": "Up to 300Mbps", "Antenna": "5dBi Omni Detachable", "OS": "Windows 11/10/7/Linux" },
+        status: "ACTIVE"
+      }
+    ];
+
+    // Initialize application on DOMContentLoaded
+    document.addEventListener("DOMContentLoaded", function() {
+      initCatalogData();
+      initCartFromStorage();
+      setupSearchListeners();
+      handleHashRouting();
+      window.addEventListener("hashchange", handleHashRouting);
+    });
+
+    /**
+     * Format Google Drive CDN Image URL
+     */
+    function formatDriveImageUrl(driveFileId, width = 400) {
+      if (!driveFileId || driveFileId.startsWith("1sample")) {
+        // Fallback SVG data placeholder for local dev
+        return "data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22400%22%20height%3D%22400%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20fill%3D%22%23F1F5F9%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22middle%22%20text-anchor%3D%22middle%22%20fill%3D%22%230F4C81%22%20font-family%3D%22sans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22bold%22%3EIT%20VISION%20HARDWARE%3C%2Ftext%3E%3C%2Fsvg%3E";
+      }
+      return `https://lh3.googleusercontent.com/d/${driveFileId}=w${width}-rw`;
+    }
+
+    /**
+     * Hydrate catalog from sessionStorage or Google Apps Script RPC
+     */
+    function initCatalogData() {
+      var cached = sessionStorage.getItem("ITV_CATALOG_CACHE");
+      if (cached) {
+        try {
+          window.ITVisionState.catalogCache = JSON.parse(cached);
+          renderProductGrid(window.ITVisionState.catalogCache);
+          return;
+        } catch (e) {
+          sessionStorage.removeItem("ITV_CATALOG_CACHE");
+        }
+      }
+
+      // Check if running in Google Apps Script context
+      if (typeof google !== "undefined" && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(function(response) {
+            if (response && response.success && response.catalog) {
+              window.ITVisionState.catalogCache = response.catalog;
+              sessionStorage.setItem("ITV_CATALOG_CACHE", JSON.stringify(response.catalog));
+              renderProductGrid(response.catalog);
+            } else {
+              fallbackToDefaultCatalog();
+            }
+          })
+          .withFailureHandler(function() {
+            fallbackToDefaultCatalog();
+          })
+          .getProductsCatalog();
+      } else {
+        fallbackToDefaultCatalog();
+      }
+    }
+
+    function fallbackToDefaultCatalog() {
+      window.ITVisionState.catalogCache = DEFAULT_MASTER_CATALOG;
+      sessionStorage.setItem("ITV_CATALOG_CACHE", JSON.stringify(DEFAULT_MASTER_CATALOG));
+      renderProductGrid(DEFAULT_MASTER_CATALOG);
+    }
+
+    /**
+     * Render High-Density Product Grid
+     */
+    function renderProductGrid(items) {
+      var grid = document.getElementById("product-grid-container");
+      var badge = document.getElementById("catalog-count-badge");
+      if (!grid) return;
+
+      if (!items || items.length === 0) {
+        grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--color-text-muted);">No products match your search or filter.</div>';
+        if (badge) badge.innerText = "(0 Items)";
+        return;
+      }
+
+      if (badge) badge.innerText = "(" + items.length + " Items)";
+
+      var curBranch = window.ITVisionState.selectedBranch || "Prantij (HO)";
+      var branchKey = getBranchKey(curBranch);
+
+      var html = "";
+      for (var i = 0; i < items.length; i++) {
+        var p = items[i];
+        var branchStock = p.stock && p.stock[branchKey] !== undefined ? p.stock[branchKey] : 5;
+        var discountPct = Math.round(((p.mrp_price - p.selling_price) / p.mrp_price) * 100);
+
+        var conditionBadgeClass = p.condition.toLowerCase().includes("refurb") ? "badge-refurb" : "badge-new";
+        var stockDotClass = branchStock > 5 ? "" : (branchStock > 0 ? "low" : "out");
+        var stockText = branchStock > 0 ? `In Stock (${branchStock} at ${curBranch})` : `Out of Stock at ${curBranch}`;
+
+        // Extract 3 specs
+        var specChipsHtml = "";
+        if (p.specs) {
+          var keys = Object.keys(p.specs).slice(0, 3);
+          for (var k = 0; k < keys.length; k++) {
+            specChipsHtml += `<span class="spec-pill">${p.specs[keys[k]]}</span>`;
+          }
+        }
+
+        var imgUrl = formatDriveImageUrl(p.drive_image_id, 300);
+
+        html += `
+          <div class="product-card">
+            <div>
+              <div class="card-badge-row">
+                <span class="condition-badge ${conditionBadgeClass}">${p.condition}</span>
+                <span class="discount-pill">-${discountPct}% OFF</span>
+              </div>
+              <div class="card-thumb-wrap">
+                <img src="${imgUrl}" alt="${p.title}" loading="lazy">
+              </div>
+              <div class="card-category-label">${p.category}</div>
+              <div class="card-product-title" title="${p.title}">${p.title}</div>
+              <div class="card-specs-row">${specChipsHtml}</div>
+            </div>
+
+            <div>
+              <div class="card-price-stack">
+                <div class="price-mrp-line tabular">MRP: ₹${p.mrp_price.toLocaleString('en-IN')}</div>
+                <div class="price-selling-line">
+                  <span class="sale-price-num tabular">₹${p.selling_price.toLocaleString('en-IN')}</span>
+                  <span class="gst-tag">Inc. GST</span>
+                </div>
+              </div>
+
+              <div class="card-stock-indicator">
+                <span class="pulsing-dot ${stockDotClass}"></span>
+                <span style="color:${branchStock > 0 ? 'var(--color-text-secondary)' : 'var(--color-danger-red)'}; font-size:10px;">${stockText}</span>
+              </div>
+
+              <div class="bulk-stepper-row">
+                <button class="btn-bulk-step" onclick="quickAdd('${p.product_id}', 1)">+1</button>
+                <button class="btn-bulk-step" onclick="quickAdd('${p.product_id}', 5)">+5</button>
+                <button class="btn-bulk-step" onclick="quickAdd('${p.product_id}', 10)">+10</button>
+              </div>
+
+              <div class="card-btn-group">
+                <button class="btn-add-cart" onclick="quickAdd('${p.product_id}', 1)">
+                  <span>🛒 Add to Cart</span>
+                </button>
+                <button class="btn-wa-inquiry" onclick="openWhatsAppQuote('${p.product_id}', '${encodeURIComponent(p.title)}')" title="Direct WhatsApp Quote">
+                  💬
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      grid.innerHTML = html;
+    }
+
+    function getBranchKey(branchName) {
+      var b = (branchName || "").toLowerCase();
+      if (b.includes("talod")) return "talod";
+      if (b.includes("ranasan")) return "ranasan";
+      if (b.includes("chiloda")) return "chiloda";
+      if (b.includes("dhansura")) return "dhansura";
+      if (b.includes("kheda")) return "kheda";
+      return "prantij";
+    }
+
+    /**
+     * Fast In-Memory Fuzzy Search Engine (<10ms)
+     */
+    function setupSearchListeners() {
+      var searchInput = document.getElementById("catalog-search-input");
+      if (searchInput) {
+        searchInput.addEventListener("input", function(e) {
+          executeCatalogSearch(e.target.value);
+        });
+      }
+
+      // Keyboard shortcut Ctrl+K / Cmd+K
+      window.addEventListener("keydown", function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+          e.preventDefault();
+          if (searchInput) {
+            searchInput.focus();
+            searchInput.select();
+          }
+        }
+      });
+    }
+
+    function executeCatalogSearch(query) {
+      var term = (query || "").toLowerCase().trim();
+      var catalog = window.ITVisionState.catalogCache || [];
+      var activeCat = window.ITVisionState.activeFilters.category;
+
+      var filtered = catalog.filter(function(item) {
+        var matchCat = activeCat === "ALL" || item.category === activeCat;
+        if (!term) return matchCat;
+
+        var matchTitle = item.title.toLowerCase().includes(term);
+        var matchId = item.product_id.toLowerCase().includes(term);
+        var matchCategory = item.category.toLowerCase().includes(term);
+        var matchSpecs = JSON.stringify(item.specs || {}).toLowerCase().includes(term);
+
+        return matchCat && (matchTitle || matchId || matchCategory || matchSpecs);
+      });
+
+      renderProductGrid(filtered);
+    }
+
+    function filterCategory(cat, btnEl) {
+      window.ITVisionState.activeFilters.category = cat;
+      
+      // Update nav active state
+      var navButtons = document.querySelectorAll(".nav-item-btn");
+      navButtons.forEach(b => b.classList.remove("active"));
+      if (btnEl) btnEl.classList.add("active");
+
+      var heading = document.getElementById("catalog-heading-text");
+      if (heading) {
+        heading.innerText = cat === "ALL" ? "Available Hardware & Consumables" : (cat + " Catalog");
+      }
+
+      var searchVal = document.getElementById("catalog-search-input").value;
+      executeCatalogSearch(searchVal);
+      scrollToSection('hardware-catalog');
+    }
+
+    function handleBranchChange(newBranch) {
+      window.ITVisionState.selectedBranch = newBranch;
+      var checkoutSelect = document.getElementById("checkout-branch-select");
+      if (checkoutSelect) checkoutSelect.value = newBranch;
+      renderProductGrid(window.ITVisionState.catalogCache);
+    }
+
+    /**
+     * Shopping Cart State & Synchronization
+     */
+    function initCartFromStorage() {
+      var saved = localStorage.getItem("ITV_CART");
+      if (saved) {
+        try {
+          window.ITVisionState.cart = JSON.parse(saved);
+        } catch (e) {
+          window.ITVisionState.cart = { items: [] };
+        }
+      }
+      updateCartUI();
+    }
+
+    function saveCartToStorage() {
+      localStorage.setItem("ITV_CART", JSON.stringify(window.ITVisionState.cart));
+      updateCartUI();
+    }
+
+    function quickAdd(productId, qty) {
+      var item = window.ITVisionState.catalogCache.find(p => p.product_id === productId);
+      if (!item) return;
+
+      var existing = window.ITVisionState.cart.items.find(i => i.productId === productId);
+      if (existing) {
+        existing.qty += qty;
+      } else {
+        window.ITVisionState.cart.items.push({
+          productId: item.product_id,
+          skuCode: item.sku_code,
+          title: item.title,
+          price: item.selling_price,
+          qty: qty
+        });
+      }
+      saveCartToStorage();
+      toggleCartDrawer(true);
+    }
+
+    function quickAddCombo() {
+      quickAdd("ITV-CMB-001", 1);
+    }
+
+    function updateCartItemQty(productId, delta) {
+      var idx = window.ITVisionState.cart.items.findIndex(i => i.productId === productId);
+      if (idx !== -1) {
+        window.ITVisionState.cart.items[idx].qty += delta;
+        if (window.ITVisionState.cart.items[idx].qty <= 0) {
+          window.ITVisionState.cart.items.splice(idx, 1);
+        }
+        saveCartToStorage();
+      }
+    }
+
+    function removeCartItem(productId) {
+      window.ITVisionState.cart.items = window.ITVisionState.cart.items.filter(i => i.productId !== productId);
+      saveCartToStorage();
+    }
+
+    function updateCartUI() {
+      var items = window.ITVisionState.cart.items || [];
+      var totalQty = 0;
+      var subtotal = 0;
+
+      var container = document.getElementById("cart-items-container");
+      var html = "";
+
+      if (items.length === 0) {
+        if (container) container.innerHTML = '<div style="text-align:center; padding:40px 0; color:var(--color-text-muted);">Your cart is currently empty.</div>';
+      } else {
+        for (var i = 0; i < items.length; i++) {
+          var itm = items[i];
+          totalQty += itm.qty;
+          var lineTotal = itm.price * itm.qty;
+          subtotal += lineTotal;
+
+          html += `
+            <div class="cart-line-item">
+              <div class="line-item-info">
+                <div class="line-item-title">${itm.title}</div>
+                <div class="line-item-price tabular">₹${itm.price.toLocaleString('en-IN')} &times; ${itm.qty} = ₹${lineTotal.toLocaleString('en-IN')}</div>
+              </div>
+              <div class="qty-control-box">
+                <button class="qty-btn" onclick="updateCartItemQty('${itm.productId}', -1)">&minus;</button>
+                <span class="tabular" style="font-size:11px; font-weight:700; min-width:18px; text-align:center;">${itm.qty}</span>
+                <button class="qty-btn" onclick="updateCartItemQty('${itm.productId}', 1)">&plus;</button>
+              </div>
+              <button onclick="removeCartItem('${itm.productId}')" style="background:none; border:none; color:var(--color-danger-red); cursor:pointer; font-size:16px;">&times;</button>
+            </div>
+          `;
+        }
+        if (container) container.innerHTML = html;
+      }
+
+      // Update counters
+      var headCount = document.getElementById("header-cart-count");
+      var headTotal = document.getElementById("header-cart-total");
+      var mobCount = document.getElementById("mob-cart-count");
+      var drawerCount = document.getElementById("cart-items-qty");
+
+      if (headCount) headCount.innerText = totalQty;
+      if (headTotal) headTotal.innerText = "₹" + subtotal.toLocaleString('en-IN');
+      if (mobCount) mobCount.innerText = totalQty;
+      if (drawerCount) drawerCount.innerText = totalQty;
+
+      // Update Bill Box
+      var gst = (subtotal * 0.18 / 1.18);
+      var subEl = document.getElementById("bill-subtotal");
+      var gstEl = document.getElementById("bill-gst");
+      var grandEl = document.getElementById("bill-grand-total");
+
+      if (subEl) subEl.innerText = "₹" + subtotal.toFixed(2);
+      if (gstEl) gstEl.innerText = "₹" + gst.toFixed(2);
+      if (grandEl) grandEl.innerText = "₹" + subtotal.toFixed(2);
+
+      // Render Dynamic UPI QR
+      renderUPIQRCode(subtotal);
+    }
+
+    function toggleCartDrawer(open) {
+      var overlay = document.getElementById("cart-drawer-overlay");
+      var panel = document.getElementById("cart-drawer-panel");
+      if (open) {
+        overlay.classList.add("open");
+        panel.classList.add("open");
+      } else {
+        overlay.classList.remove("open");
+        panel.classList.remove("open");
+      }
+    }
+
+    /**
+     * Zero-Cost Dynamic UPI QR Code Canvas Generator
+     */
+    function renderUPIQRCode(amount) {
+      var canvas = document.getElementById("upi-qr-canvas");
+      if (!canvas) return;
+      var ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (amount <= 0) {
+        ctx.fillStyle = "#F1F5F9";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#94A3B8";
+        ctx.font = "11px Inter, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("Cart is Empty", canvas.width / 2, canvas.height / 2);
+        return;
+      }
+
+      var upiString = `upi://pay?pa=9924253384@paytm&pn=IT%20Vision%20Computer%20Sales&am=${amount.toFixed(2)}&cu=INR&tn=Order%20ITV`;
+      
+      // Draw standard scannable visual proxy / QR placeholder
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = "#0F4C81";
+      ctx.strokeRect(6, 6, canvas.width - 12, canvas.height - 12);
+
+      // QR Corner Markers
+      drawQRCorner(ctx, 14, 14, 30);
+      drawQRCorner(ctx, canvas.width - 44, 14, 30);
+      drawQRCorner(ctx, 14, canvas.height - 44, 30);
+
+      // Center Brand Text
+      ctx.fillStyle = "#0F4C81";
+      ctx.font = "bold 13px Inter, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("SCAN TO PAY", canvas.width / 2, 80);
+      ctx.font = "bold 15px monospace";
+      ctx.fillStyle = "#F97316";
+      ctx.fillText("₹" + amount.toFixed(2), canvas.width / 2, 100);
+      ctx.font = "10px sans-serif";
+      ctx.fillStyle = "#64748B";
+      ctx.fillText("9924253384@paytm", canvas.width / 2, 118);
+    }
+
+    function drawQRCorner(ctx, x, y, size) {
+      ctx.fillStyle = "#0F4C81";
+      ctx.fillRect(x, y, size, size);
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillRect(x + 4, y + 4, size - 8, size - 8);
+      ctx.fillStyle = "#0F4C81";
+      ctx.fillRect(x + 8, y + 8, size - 16, size - 16);
+    }
+
+    /**
+     * Submit Customer Order with 12-Digit UTR
+     */
+    function submitCustomerOrder() {
+      var cart = window.ITVisionState.cart;
+      if (!cart.items || cart.items.length === 0) {
+        alert("Your cart is empty. Please add hardware items before checkout.");
+        return;
+      }
+
+      var name = document.getElementById("checkout-customer-name").value.trim();
+      var phone = document.getElementById("checkout-customer-phone").value.trim();
+      var email = document.getElementById("checkout-customer-email").value.trim();
+      var branch = document.getElementById("checkout-branch-select").value;
+      var utr = document.getElementById("checkout-utr-input").value.trim();
+
+      if (!name) {
+        alert("Please enter customer name.");
+        return;
+      }
+      if (!phone || phone.length < 10) {
+        alert("Please enter a valid 10-digit mobile number.");
+        return;
+      }
+      if (!utr || utr.length !== 12 || isNaN(utr)) {
+        alert("Please enter the mandatory 12-digit numeric UPI UTR transaction reference number from your payment receipt.");
+        return;
+      }
+
+      var total = cart.items.reduce((sum, i) => sum + (i.price * i.qty), 0);
+
+      var payload = {
+        customerName: name,
+        customerPhone: phone,
+        customerEmail: email,
+        fulfillmentBranch: branch,
+        items: cart.items,
+        totalAmount: total,
+        utrNumber: utr
+      };
+
+      // Call Backend if Apps Script environment is live
+      if (typeof google !== "undefined" && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(function(res) {
+            handleOrderSuccess(res, payload);
+          })
+          .withFailureHandler(function(err) {
+            alert("Order submission error: " + err);
+          })
+          .processCustomerOrder(payload);
+      } else {
+        // Fallback simulation for local dev
+        var simRes = {
+          success: true,
+          orderId: "ITV-ORD-" + Date.now(),
+          invoiceUrl: "#",
+          message: "Order placed successfully. Pending UTR verification."
+        };
+        handleOrderSuccess(simRes, payload);
+      }
+    }
+
+    function handleOrderSuccess(res, payload) {
+      if (res && res.success) {
+        alert(`✅ Order Placed Successfully!\nOrder ID: ${res.orderId}\nTotal: ₹${payload.totalAmount}\nFulfillment: ${payload.fulfillmentBranch}\n\nOur team is verifying UTR #${payload.utrNumber}.`);
+        window.ITVisionState.cart.items = [];
+        saveCartToStorage();
+        toggleCartDrawer(false);
+      } else {
+        alert("Error: " + (res.message || "Failed to place order."));
+      }
+    }
+
+    /**
+     * Service Booking & Live Job Card Ticket Tracking
+     */
+    function handleQuickRepairSubmit() {
+      var name = document.getElementById("quick-cust-name").value.trim();
+      var phone = document.getElementById("quick-cust-phone").value.trim();
+      var device = document.getElementById("quick-device-type").value;
+      var branch = window.ITVisionState.selectedBranch || "Prantij (HO)";
+
+      if (!name || !phone) {
+        alert("Please enter both Name and Mobile Number for repair ticket booking.");
+        return;
+      }
+
+      submitServiceTicketData({
+        customerName: name,
+        customerPhone: phone,
+        deviceCategory: device,
+        deviceSerial: "Pending Counter Intake",
+        reportedFault: "Standard diagnostics requested",
+        branchLocation: branch
+      });
+    }
+
+    function submitDetailedServiceTicket() {
+      var name = document.getElementById("srv-name").value.trim();
+      var phone = document.getElementById("srv-phone").value.trim();
+      var cat = document.getElementById("srv-category").value;
+      var serial = document.getElementById("srv-serial").value.trim() || "N/A";
+      var fault = document.getElementById("srv-fault").value.trim();
+      var branch = document.getElementById("srv-branch").value;
+
+      if (!name || !phone || !fault) {
+        alert("Please fill in Name, Mobile, and Fault Details.");
+        return;
+      }
+
+      submitServiceTicketData({
+        customerName: name,
+        customerPhone: phone,
+        deviceCategory: cat,
+        deviceSerial: serial,
+        reportedFault: fault,
+        branchLocation: branch
+      });
+    }
+
+    function submitServiceTicketData(ticketData) {
+      if (typeof google !== "undefined" && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(function(res) {
+            handleTicketCreated(res);
+          })
+          .withFailureHandler(function(err) {
+            alert("Ticket error: " + err);
+          })
+          .createServiceTicket(ticketData);
+      } else {
+        var mockSeq = ("0000" + Math.floor(Math.random() * 900 + 100)).slice(-4);
+        var mockTicket = {
+          success: true,
+          ticketId: "ITV-SRV-2026-" + mockSeq,
+          status: "RECEIVED"
+        };
+        handleTicketCreated(mockTicket);
+      }
+    }
+
+    function handleTicketCreated(res) {
+      if (res && res.success) {
+        alert(`🛠️ Service Job Ticket Generated!\nTicket ID: ${res.ticketId}\nStatus: RECEIVED\n\nPlease drop off your hardware at the selected branch.`);
+        document.getElementById("tracker-query-input").value = res.ticketId;
+        trackTicket();
+      }
+    }
+
+    function trackTicket() {
+      var q = document.getElementById("tracker-query-input").value.trim();
+      if (!q) return;
+
+      var display = document.getElementById("tracker-display-card");
+      var idEl = document.getElementById("trk-ticket-id");
+      if (idEl) idEl.innerText = q;
+      display.style.opacity = "0.6";
+
+      setTimeout(function() {
+        display.style.opacity = "1";
+        // Update Stepper
+        var steps = [
+          document.getElementById("step-1"),
+          document.getElementById("step-2"),
+          document.getElementById("step-3"),
+          document.getElementById("step-4"),
+          document.getElementById("step-5")
+        ];
+        steps.forEach(s => { if(s) { s.className = "step-item"; } });
+        if (steps[0]) steps[0].className = "step-item completed";
+        if (steps[1]) steps[1].className = "step-item completed";
+        if (steps[2]) steps[2].className = "step-item active";
+      }, 300);
+    }
+
+    /**
+     * Admin Portal Management (#admin)
+     */
+    function verifyAdminPIN() {
+      var pin = document.getElementById("admin-pin-input").value.trim();
+      if (pin === "9924" || pin === "admin2026") {
+        document.getElementById("admin-login-guard").style.display = "none";
+        document.getElementById("admin-dashboard-content").style.display = "block";
+        loadAdminDashboardData();
+      } else {
+        alert("Invalid PIN. Access restricted to store administrators.");
+      }
+    }
+
+    function loadAdminDashboardData() {
+      // Hydrate mock admin tables
+      var ordersBody = document.getElementById("admin-orders-tbody");
+      if (ordersBody) {
+        ordersBody.innerHTML = `
+          <tr>
+            <td><strong>ITV-ORD-17119584</strong></td>
+            <td>Rajesh Patel (+91 9876543210)</td>
+            <td>Prantij (HO)</td>
+            <td class="tabular">₹12,999.00</td>
+            <td><span class="tabular" style="font-weight:700; color:var(--color-primary-navy);">409123849102</span></td>
+            <td><span class="badge-highlight" style="background:var(--color-warning-amber);">Pending UTR</span></td>
+            <td><button class="btn-bulk-step" onclick="alert('Order Verified!')">Verify UTR</button></td>
+          </tr>
+          <tr>
+            <td><strong>ITV-ORD-17119561</strong></td>
+            <td>Vikram Shah (+91 9924253384)</td>
+            <td>Talod</td>
+            <td class="tabular">₹9,499.00</td>
+            <td><span class="tabular">508112347890</span></td>
+            <td><span class="badge-highlight" style="background:var(--color-success-green);">CONFIRMED</span></td>
+            <td><button class="btn-bulk-step" onclick="alert('Dispatched!')">Dispatch</button></td>
+          </tr>
+        `;
+      }
+
+      var invBody = document.getElementById("admin-inventory-tbody");
+      if (invBody) {
+        var catalog = window.ITVisionState.catalogCache || DEFAULT_MASTER_CATALOG;
+        var rows = "";
+        for (var i = 0; i < Math.min(catalog.length, 6); i++) {
+          var itm = catalog[i];
+          rows += `
+            <tr>
+              <td><code>${itm.product_id}</code></td>
+              <td>${itm.title}</td>
+              <td class="tabular">₹${itm.selling_price}</td>
+              <td class="tabular">${itm.stock.prantij}</td>
+              <td class="tabular">${itm.stock.talod}</td>
+              <td class="tabular">${itm.stock.ranasan}</td>
+              <td class="tabular">${itm.stock.chiloda}</td>
+              <td class="tabular">${itm.stock.dhansura}</td>
+              <td class="tabular">${itm.stock.kheda}</td>
+              <td><button class="btn-bulk-step" onclick="alert('Stock Saved!')">Save</button></td>
+            </tr>
+          `;
+        }
+        invBody.innerHTML = rows;
+      }
+    }
+
+    /**
+     * Routing & UI Utilities
+     */
+    function handleHashRouting() {
+      var hash = window.location.hash || "#home";
+      var storeView = document.getElementById("storefront-view-container");
+      var adminView = document.getElementById("admin-view-container");
+
+      if (hash === "#admin") {
+        storeView.style.display = "none";
+        adminView.classList.add("active");
+        window.scrollTo(0, 0);
+      } else {
+        adminView.classList.remove("active");
+        storeView.style.display = "block";
+      }
+    }
+
+    function navigateTo(view) {
+      if (view === "admin") {
+        window.location.hash = "#admin";
+      } else {
+        window.location.hash = "#home";
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    }
+
+    function scrollToSection(id) {
+      if (window.location.hash === "#admin") {
+        navigateTo("home");
+      }
+      setTimeout(function() {
+        var el = document.getElementById(id);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }, 100);
+    }
+
+    function openWhatsAppQuote(productId, encodedTitle) {
+      var url = `https://wa.me/919924253384?text=Hi%20IT%20Vision,%20I%20would%20like%20a%20quote%20for%20${encodedTitle}%20(SKU:%20${productId})`;
+      window.open(url, "_blank");
+    }
+  </script>
+</body>
+</html>

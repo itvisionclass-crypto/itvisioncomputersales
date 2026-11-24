@@ -338,6 +338,7 @@
       gap: 6px;
       transition: all 0.15s ease;
       border-bottom: 2px solid transparent;
+      text-decoration: none;
     }
     .nav-item-btn:hover, .nav-item-btn.active {
       color: #FFFFFF;
@@ -1488,15 +1489,15 @@
   <nav class="category-nav-bar">
     <div class="container">
       <ul class="nav-links-row">
-        <li><button class="nav-item-btn active" onclick="filterCategory('ALL', this)">All Hardware</button></li>
-        <li><button class="nav-item-btn" onclick="filterCategory('Combo', this)">⚡ Combo Deals <span class="badge-highlight">Hot</span></button></li>
-        <li><button class="nav-item-btn" onclick="filterCategory('Desktop', this)">Desktops (OptiPlex)</button></li>
-        <li><button class="nav-item-btn" onclick="filterCategory('Laptop', this)">Refurb Laptops</button></li>
-        <li><button class="nav-item-btn" onclick="filterCategory('Printer', this)">Laser Printers (HP)</button></li>
-        <li><button class="nav-item-btn" onclick="filterCategory('Cartridge', this)">Toner Cartridges</button></li>
-        <li><button class="nav-item-btn" onclick="filterCategory('Security', this)">CCTV &amp; Security</button></li>
-        <li><button class="nav-item-btn" onclick="filterCategory('Accessories', this)">Peripherals</button></li>
-        <li><button class="nav-item-btn" onclick="scrollToSection('service-hub')">Repair Center</button></li>
+        <li><a href="#hardware" class="nav-item-btn active" id="nav-btn-hardware">All Hardware</a></li>
+        <li><a href="#combos" class="nav-item-btn" id="nav-btn-combos">⚡ Combo Deals <span class="badge-highlight">Hot</span></a></li>
+        <li><a href="#desktops" class="nav-item-btn" id="nav-btn-desktops">Desktops (OptiPlex)</a></li>
+        <li><a href="#laptops" class="nav-item-btn" id="nav-btn-laptops">Refurb Laptops</a></li>
+        <li><a href="#printers" class="nav-item-btn" id="nav-btn-printers">Laser Printers (HP)</a></li>
+        <li><a href="#cartridges" class="nav-item-btn" id="nav-btn-cartridges">Toner Cartridges</a></li>
+        <li><a href="#security" class="nav-item-btn" id="nav-btn-security">CCTV &amp; Security</a></li>
+        <li><a href="#peripherals" class="nav-item-btn" id="nav-btn-peripherals">Peripherals</a></li>
+        <li><a href="#repairs" class="nav-item-btn" id="nav-btn-repairs">Repair Center</a></li>
       </ul>
     </div>
   </nav>
@@ -1507,8 +1508,20 @@
   <main id="storefront-view-container">
     <div class="container">
 
+      <!-- Dedicated Dynamic Page Header Banner for Individual Pages -->
+      <section id="page-banner-strip" style="display:none; margin: 16px 0; background: linear-gradient(135deg, #0F4C81 0%, #1E293B 100%); color:#FFFFFF; border-radius: 8px; padding: 22px 26px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 12px rgba(0,0,0,0.06);">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
+          <div>
+            <div id="page-banner-badge" style="display:inline-block; font-size:11px; font-weight:700; text-transform:uppercase; background:rgba(255,255,255,0.12); padding:3px 9px; border-radius:4px; margin-bottom:8px; color:var(--color-accent-orange); letter-spacing:0.5px;"></div>
+            <h1 id="page-banner-title" style="font-size:22px; font-weight:800; margin-bottom:6px; color:#FFFFFF; line-height:1.2;"></h1>
+            <p id="page-banner-subtitle" style="font-size:13px; color:#CBD5E1; margin:0; line-height:1.4;"></p>
+          </div>
+          <div id="page-banner-actions"></div>
+        </div>
+      </section>
+
       <!-- TIER 4: SPLIT HERO BANNER & QUICK INTAKE -->
-      <section class="hero-split-section">
+      <section class="hero-split-section" id="hero-split-section">
         <div class="hero-split-grid">
           
           <!-- Hero Promo Card -->
@@ -1596,40 +1609,40 @@
       </section>
 
       <!-- TIER 5: CATEGORY ICON GRID -->
-      <section class="category-grid-section">
+      <section class="category-grid-section" id="category-grid-section">
         <div class="category-icons-row">
-          <div class="category-bubble-card" onclick="filterCategory('Combo')">
+          <a href="#combos" class="category-bubble-card" style="text-decoration:none; color:inherit;">
             <div class="bubble-icon">⚡</div>
             <div class="bubble-label">Combos</div>
-          </div>
-          <div class="category-bubble-card" onclick="filterCategory('Desktop')">
+          </a>
+          <a href="#desktops" class="category-bubble-card" style="text-decoration:none; color:inherit;">
             <div class="bubble-icon">🖥️</div>
             <div class="bubble-label">Desktops</div>
-          </div>
-          <div class="category-bubble-card" onclick="filterCategory('Laptop')">
+          </a>
+          <a href="#laptops" class="category-bubble-card" style="text-decoration:none; color:inherit;">
             <div class="bubble-icon">💻</div>
             <div class="bubble-label">Laptops</div>
-          </div>
-          <div class="category-bubble-card" onclick="filterCategory('Printer')">
+          </a>
+          <a href="#printers" class="category-bubble-card" style="text-decoration:none; color:inherit;">
             <div class="bubble-icon">🖨️</div>
             <div class="bubble-label">Printers</div>
-          </div>
-          <div class="category-bubble-card" onclick="filterCategory('Cartridge')">
+          </a>
+          <a href="#cartridges" class="category-bubble-card" style="text-decoration:none; color:inherit;">
             <div class="bubble-icon">🧪</div>
             <div class="bubble-label">Toners</div>
-          </div>
-          <div class="category-bubble-card" onclick="filterCategory('Security')">
+          </a>
+          <a href="#security" class="category-bubble-card" style="text-decoration:none; color:inherit;">
             <div class="bubble-icon">📹</div>
             <div class="bubble-label">CCTV</div>
-          </div>
-          <div class="category-bubble-card" onclick="filterCategory('Accessories')">
+          </a>
+          <a href="#peripherals" class="category-bubble-card" style="text-decoration:none; color:inherit;">
             <div class="bubble-icon">⌨️</div>
             <div class="bubble-label">Peripherals</div>
-          </div>
-          <div class="category-bubble-card" onclick="scrollToSection('service-hub')">
+          </a>
+          <a href="#repairs" class="category-bubble-card" style="text-decoration:none; color:inherit;">
             <div class="bubble-icon">🔧</div>
             <div class="bubble-label">Repairs</div>
-          </div>
+          </a>
         </div>
       </section>
 
@@ -1773,7 +1786,7 @@
       </section>
 
       <!-- TIER 8: WHOLESALE & INSTITUTIONAL PROCUREMENT BANNER -->
-      <section class="wholesale-strip-banner">
+      <section class="wholesale-strip-banner" id="wholesale-strip-banner">
         <div>
           <div class="wholesale-title">Wholesale Supplies for Schools, Cyber Cafes &amp; Offices</div>
           <div class="wholesale-sub">Bulk pricing tiers on refurbished OptiPlex desktops, 12A/88A cartridges &amp; CCTV deployment for enterprise customers.</div>
@@ -2584,22 +2597,28 @@
       renderProductGrid(filtered);
     }
 
-    function filterCategory(cat, btnEl) {
+    function filterCategory(cat, btnEl, autoScroll = true) {
       window.ITVisionState.activeFilters.category = cat;
       
       // Update nav active state
-      var navButtons = document.querySelectorAll(".nav-item-btn");
-      navButtons.forEach(b => b.classList.remove("active"));
-      if (btnEl) btnEl.classList.add("active");
+      if (btnEl) {
+        var navButtons = document.querySelectorAll(".nav-item-btn");
+        navButtons.forEach(b => b.classList.remove("active"));
+        btnEl.classList.add("active");
+      }
 
       var heading = document.getElementById("catalog-heading-text");
       if (heading) {
         heading.innerText = cat === "ALL" ? "Available Hardware & Consumables" : (cat + " Catalog");
       }
 
-      var searchVal = document.getElementById("catalog-search-input").value;
+      var searchInput = document.getElementById("catalog-search-input");
+      var searchVal = searchInput ? searchInput.value : "";
       executeCatalogSearch(searchVal);
-      scrollToSection('hardware-catalog');
+      if (autoScroll) {
+        var el = document.getElementById('hardware-catalog');
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
     }
 
     function handleBranchChange(newBranch) {
@@ -3361,45 +3380,259 @@
     window.updateSupabaseStatusUI = updateSupabaseStatusUI;
 
     /**
-     * Routing & UI Utilities
+     * Dedicated Page Routing Configuration
+     * Handles separate views for: All Hardware, Combo Deals, Desktops (OptiPlex),
+     * Refurb Laptops, Laser Printers, Toner Cartridges, CCTV & Security, Peripherals, and Repair Center.
+     */
+    var PAGE_CONFIGS = {
+      hardware: {
+        title: "All Computer Hardware & Accessories",
+        badge: "🛒 COMPLETE REGIONAL CATALOG",
+        subtitle: "Complete inventory of certified refurbished systems, laser printers, toners, and components across 6 regional branches.",
+        category: "ALL",
+        showHero: true,
+        showBubbles: true,
+        showCatalog: true,
+        showRepairs: false,
+        showWholesale: true,
+        navId: "nav-btn-hardware"
+      },
+      combos: {
+        title: "⚡ Hot Combo Deals & Complete Bundles",
+        badge: "🔥 BEST VALUE PACKAGES",
+        subtitle: "Turnkey computer workstation packages including Core i5 OptiPlex desktop, monitor, HP laser printer, and all required cables.",
+        category: "Combo",
+        showHero: true,
+        showBubbles: false,
+        showCatalog: true,
+        showRepairs: false,
+        showWholesale: true,
+        navId: "nav-btn-combos"
+      },
+      desktops: {
+        title: "🖥️ Business Desktops & OptiPlex Workstations",
+        badge: "⚡ COMMERCIAL HARDWARE",
+        subtitle: "Commercial Dell OptiPlex 7040 SFF/Micro, HP ProDesk & custom high-speed desktop PCs tested with genuine RAM & SSDs.",
+        category: "Desktop",
+        showHero: false,
+        showBubbles: false,
+        showCatalog: true,
+        showRepairs: false,
+        showWholesale: true,
+        navId: "nav-btn-desktops"
+      },
+      laptops: {
+        title: "💻 Certified Refurbished Commercial Laptops",
+        badge: "⭐ 1-YEAR WARRANTY INCLUDED",
+        subtitle: "Commercial Lenovo ThinkPad, Dell Latitude & HP EliteBook laptops with 100% battery health check and fresh Windows install.",
+        category: "Laptop",
+        showHero: false,
+        showBubbles: false,
+        showCatalog: true,
+        showRepairs: false,
+        showWholesale: false,
+        navId: "nav-btn-laptops"
+      },
+      printers: {
+        title: "🖨️ Heavy-Duty Laser Printers (HP & Canon)",
+        badge: "📄 WORKHORSE PRINTERS",
+        subtitle: "High-duty monochrome and color laser printers (HP LaserJet 1020, Canon LBP 2900B) for cyber cafes, offices, and schools.",
+        category: "Printer",
+        showHero: false,
+        showBubbles: false,
+        showCatalog: true,
+        showRepairs: false,
+        showWholesale: false,
+        navId: "nav-btn-printers"
+      },
+      cartridges: {
+        title: "🧪 Compatible Laser Toner Cartridges & Refills",
+        badge: "📦 WHOLESALE AVAILABLE",
+        subtitle: "Factory-sealed 12A, 88A, Canon 303 toner cartridges and high-density refill powders with 100% dark print guarantee.",
+        category: "Cartridge",
+        showHero: false,
+        showBubbles: false,
+        showCatalog: true,
+        showRepairs: false,
+        showWholesale: true,
+        navId: "nav-btn-cartridges"
+      },
+      security: {
+        title: "📹 CCTV & Security Surveillance Systems",
+        badge: "🔒 ON-SITE INSTALLATION",
+        subtitle: "CP Plus & Hikvision HD/IP camera kits, 4CH/8CH DVR surveillance systems, night vision lenses, and surveillance storage.",
+        category: "Security",
+        showHero: false,
+        showBubbles: false,
+        showCatalog: true,
+        showRepairs: false,
+        showWholesale: false,
+        navId: "nav-btn-security"
+      },
+      peripherals: {
+        title: "⌨️ Computer Peripherals, Upgrades & Accessories",
+        badge: "⚡ HIGH-SPEED UPGRADES",
+        subtitle: "High-speed SATA/NVMe SSDs, DDR3/DDR4 RAM modules, keyboards, optical mice, Wi-Fi dongles, and display cables.",
+        category: "Accessories",
+        showHero: false,
+        showBubbles: false,
+        showCatalog: true,
+        showRepairs: false,
+        showWholesale: false,
+        navId: "nav-btn-peripherals"
+      },
+      repairs: {
+        title: "🛠️ IT Vision Hardware Repair & Service Center",
+        badge: "🔧 ZERO INSPECTION CHARGES",
+        subtitle: "Motherboard chip-level repair, laptop screen & hinge replacement, laser printer servicing, and 24-hr turnaround across 6 branches.",
+        category: null,
+        showHero: false,
+        showBubbles: false,
+        showCatalog: false,
+        showRepairs: true,
+        showWholesale: false,
+        navId: "nav-btn-repairs"
+      }
+    };
+
+    /**
+     * Routing & Multi-Page View Manager
      */
     function handleHashRouting() {
-      var hash = window.location.hash || "#home";
+      var rawHash = (window.location.hash || "").toLowerCase();
+      var clean = rawHash.replace("#", "").trim();
+
       var storeView = document.getElementById("storefront-view-container");
       var adminView = document.getElementById("admin-view-container");
 
-      if (hash === "#admin") {
+      if (clean === "admin") {
         storeView.style.display = "none";
         adminView.classList.add("active");
         if (typeof updateSupabaseStatusUI === "function") {
           updateSupabaseStatusUI();
         }
+        var allNavs = document.querySelectorAll(".nav-item-btn");
+        allNavs.forEach(b => b.classList.remove("active"));
         window.scrollTo(0, 0);
-      } else {
-        adminView.classList.remove("active");
-        storeView.style.display = "block";
+        return;
       }
+
+      // Map route
+      var pageKey = "hardware";
+      if (clean === "combos" || clean === "combo" || clean === "combo-deals") {
+        pageKey = "combos";
+      } else if (clean === "desktops" || clean === "desktop" || clean === "optiplex") {
+        pageKey = "desktops";
+      } else if (clean === "laptops" || clean === "laptop") {
+        pageKey = "laptops";
+      } else if (clean === "printers" || clean === "printer") {
+        pageKey = "printers";
+      } else if (clean === "cartridges" || clean === "cartridge" || clean === "toners" || clean === "toner") {
+        pageKey = "cartridges";
+      } else if (clean === "security" || clean === "cctv") {
+        pageKey = "security";
+      } else if (clean === "peripherals" || clean === "accessories") {
+        pageKey = "peripherals";
+      } else if (clean === "repairs" || clean === "repair" || clean === "repair-center" || clean === "service-hub") {
+        pageKey = "repairs";
+      } else {
+        pageKey = "hardware";
+      }
+
+      var cfg = PAGE_CONFIGS[pageKey];
+      if (!cfg) return;
+
+      // Show storefront, hide admin
+      adminView.classList.remove("active");
+      storeView.style.display = "block";
+
+      // Update Nav active classes
+      var allNavs = document.querySelectorAll(".nav-item-btn");
+      allNavs.forEach(b => b.classList.remove("active"));
+      var activeBtn = document.getElementById(cfg.navId);
+      if (activeBtn) activeBtn.classList.add("active");
+
+      // Toggle sections
+      var heroSec = document.getElementById("hero-split-section");
+      var bubblesSec = document.getElementById("category-grid-section");
+      var catalogSec = document.getElementById("hardware-catalog");
+      var serviceSec = document.getElementById("service-hub");
+      var wholesaleSec = document.getElementById("wholesale-strip-banner");
+      var pageBanner = document.getElementById("page-banner-strip");
+
+      if (heroSec) heroSec.style.display = cfg.showHero ? "block" : "none";
+      if (bubblesSec) bubblesSec.style.display = cfg.showBubbles ? "block" : "none";
+      if (catalogSec) catalogSec.style.display = cfg.showCatalog ? "block" : "none";
+      if (serviceSec) serviceSec.style.display = cfg.showRepairs ? "block" : "none";
+      if (wholesaleSec) wholesaleSec.style.display = cfg.showWholesale ? "block" : "none";
+
+      // Configure Page Banner
+      if (pageBanner) {
+        if (pageKey === "hardware") {
+          pageBanner.style.display = "none";
+        } else {
+          pageBanner.style.display = "block";
+          var bBadge = document.getElementById("page-banner-badge");
+          var bTitle = document.getElementById("page-banner-title");
+          var bSub = document.getElementById("page-banner-subtitle");
+          var bActions = document.getElementById("page-banner-actions");
+
+          if (bBadge) bBadge.innerText = cfg.badge;
+          if (bTitle) bTitle.innerText = cfg.title;
+          if (bSub) bSub.innerText = cfg.subtitle;
+          if (bActions) {
+            if (pageKey === "repairs") {
+              bActions.innerHTML = `<a href="https://wa.me/919924253384?text=Hi%20IT%20Vision,%20I%20need%20repair%20service" target="_blank" class="btn-hero-primary" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px; padding:8px 16px; font-size:12px;"><span>💬</span> WhatsApp Tech Desk</a>`;
+            } else {
+              bActions.innerHTML = `<a href="#hardware" class="btn-hero-secondary" style="text-decoration:none; padding:8px 14px; font-size:12px; color:#FFFFFF; border-color:rgba(255,255,255,0.3);">← View All Hardware</a>`;
+            }
+          }
+        }
+      }
+
+      // Filter products if catalog is visible
+      if (cfg.showCatalog) {
+        filterCategory(cfg.category, activeBtn, false);
+        var heading = document.getElementById("catalog-heading-text");
+        if (heading) {
+          heading.innerText = pageKey === "hardware" ? "Available Hardware & Consumables" : cfg.title;
+        }
+      }
+
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function navigateToPage(pageKey) {
+      window.location.hash = "#" + pageKey;
     }
 
     function navigateTo(view) {
       if (view === "admin") {
         window.location.hash = "#admin";
+      } else if (view === "repairs" || view === "repair") {
+        window.location.hash = "#repairs";
+      } else if (view === "combos") {
+        window.location.hash = "#combos";
+      } else if (view === "home" || view === "hardware") {
+        window.location.hash = "#hardware";
       } else {
-        window.location.hash = "#home";
-        window.scrollTo({ top: 0, behavior: "smooth" });
+        window.location.hash = "#" + view;
       }
     }
 
     function scrollToSection(id) {
-      if (window.location.hash === "#admin") {
-        navigateTo("home");
+      if (id === "service-hub") {
+        window.location.hash = "#repairs";
+        return;
       }
-      setTimeout(function() {
-        var el = document.getElementById(id);
-        if (el) {
-          el.scrollIntoView({ behavior: "smooth", block: "start" });
-        }
-      }, 100);
+      if (id === "hardware-catalog") {
+        window.location.hash = "#hardware";
+        return;
+      }
+      var el = document.getElementById(id);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
     }
 
     function openWhatsAppQuote(productId, encodedTitle) {

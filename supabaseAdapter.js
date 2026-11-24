@@ -21,9 +21,17 @@ let supabaseClient = null;
 
 /**
  * Initialize Supabase Client
+ * @param {string} [explicitKey] - Optional anon key passed directly
  */
-function initSupabase() {
-  const anonKey = IT_VISION_CONFIG.SUPABASE_ANON_KEY || localStorage.getItem("ITV_SUPABASE_ANON_KEY");
+function initSupabase(explicitKey) {
+  const anonKey = explicitKey || 
+    IT_VISION_CONFIG.SUPABASE_ANON_KEY || 
+    (typeof localStorage !== "undefined" ? localStorage.getItem("ITV_SUPABASE_ANON_KEY") : "");
+
+  if (anonKey) {
+    IT_VISION_CONFIG.SUPABASE_ANON_KEY = anonKey;
+  }
+
   if (typeof supabase !== "undefined" && anonKey) {
     try {
       supabaseClient = supabase.createClient(IT_VISION_CONFIG.SUPABASE_URL, anonKey);
@@ -34,6 +42,40 @@ function initSupabase() {
     }
   }
   return null;
+}
+
+/**
+ * Set and persist Supabase Anon Key
+ */
+function setSupabaseAnonKey(key) {
+  if (!key || typeof key !== "string") return false;
+  const trimmed = key.trim();
+  if (!trimmed) return false;
+  IT_VISION_CONFIG.SUPABASE_ANON_KEY = trimmed;
+  if (typeof localStorage !== "undefined") {
+    localStorage.setItem("ITV_SUPABASE_ANON_KEY", trimmed);
+  }
+  const client = initSupabase(trimmed);
+  return !!client;
+}
+
+/**
+ * Clear stored Supabase credentials
+ */
+function clearSupabaseAnonKey() {
+  IT_VISION_CONFIG.SUPABASE_ANON_KEY = "";
+  supabaseClient = null;
+  if (typeof localStorage !== "undefined") {
+    localStorage.removeItem("ITV_SUPABASE_ANON_KEY");
+  }
+}
+
+/**
+ * Check if Supabase client is connected
+ */
+function isSupabaseConnected() {
+  if (!supabaseClient) initSupabase();
+  return !!supabaseClient;
 }
 
 /**
@@ -203,7 +245,25 @@ async function fetchSupabaseProducts() {
  */
 async function saveSupabaseProduct(product) {
   if (!supabaseClient) initSupabase();
-  if (!supabaseClient) throw new Error("Supabase client is not connected. Please set anon key.");
+
+  // If still not connected, give the user an interactive prompt to enter it right away
+  if (!supabaseClient && typeof window !== "undefined") {
+    const entered = window.prompt(
+      "Supabase Project: mztnzrpfpszfieooeprj\n\n" +
+      "To save products to your Supabase database, please paste your anon public key:\n" +
+      "(Found in Supabase Dashboard -> Project Settings -> API -> anon public)"
+    );
+    if (entered && entered.trim()) {
+      setSupabaseAnonKey(entered.trim());
+      if (typeof window.updateSupabaseStatusUI === "function") {
+        window.updateSupabaseStatusUI();
+      }
+    }
+  }
+
+  if (!supabaseClient) {
+    throw new Error("Supabase client is not connected. Please paste your anon public key in the Supabase Connection bar above.");
+  }
 
   const payload = {
     id: product.id,
@@ -231,7 +291,7 @@ async function saveSupabaseProduct(product) {
  */
 async function deleteSupabaseProduct(productId) {
   if (!supabaseClient) initSupabase();
-  if (!supabaseClient) throw new Error("Supabase client is not connected.");
+  if (!supabaseClient) throw new Error("Supabase client is not connected. Please set anon key.");
 
   const { data, error } = await supabaseClient
     .from('products')
@@ -249,6 +309,9 @@ async function deleteSupabaseProduct(productId) {
 window.ITVisionSupabase = {
   config: IT_VISION_CONFIG,
   init: initSupabase,
+  setAnonKey: setSupabaseAnonKey,
+  clearAnonKey: clearSupabaseAnonKey,
+  isConnected: isSupabaseConnected,
   uploadMedia: uploadMediaToGoogleDrive,
   fetchProducts: fetchSupabaseProducts,
   saveProduct: saveSupabaseProduct,

@@ -38,7 +38,25 @@ const mockGasEnv = {
         getFoldersByName: () => ({ hasNext: () => false }),
         createFolder: (sub) => ({ getId: () => "mock_sub_" + sub })
       })
-    })
+    }),
+    getFolderById: () => ({
+      createFile: () => ({
+        getId: () => "mock_id",
+        getUrl: () => "http://mock_url",
+        getDownloadUrl: () => "http://mock_dl",
+        getName: () => "mock_name",
+        getMimeType: () => "image/jpeg",
+        setSharing: () => {}
+      })
+    }),
+    Access: { ANYONE_WITH_LINK: "ANYONE_WITH_LINK" },
+    Permission: { VIEW: "VIEW" }
+  },
+  ContentService: {
+    createTextOutput: (str) => ({
+      setMimeType: () => str
+    }),
+    MimeType: { JSON: "JSON" }
   },
   PropertiesService: {
     getScriptProperties: () => ({
@@ -86,6 +104,8 @@ console.log("✔ Function processCustomerOrder exists:", typeof scriptContext.pr
 console.log("✔ Function createServiceTicket exists:", typeof scriptContext.createServiceTicket === 'function');
 console.log("✔ Function getTicketStatus exists:", typeof scriptContext.getTicketStatus === 'function');
 console.log("✔ Function getAdminDashboardData exists:", typeof scriptContext.getAdminDashboardData === 'function');
+console.log("✔ Function uploadPhoto exists:", typeof scriptContext.uploadPhoto === 'function');
+console.log("✔ Function doPost exists:", typeof scriptContext.doPost === 'function');
 
 // 2. Verify Index.html script block
 console.log("\n[2] Verifying Index.html Script Block...");

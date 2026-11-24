@@ -71,7 +71,34 @@ async function uploadMediaToGoogleDrive(file, onStatusUpdate) {
 
         if (onStatusUpdate) onStatusUpdate(`Uploading ${file.name} to Google Drive...`);
 
-        // Send payload via POST as text/plain to prevent browser CORS preflight (OPTIONS) block
+        // 1. Direct Apps Script RPC if running inside Google Apps Script
+        if (typeof google !== "undefined" && google.script && google.script.run && typeof google.script.run.uploadPhoto === "function") {
+          google.script.run
+            .withSuccessHandler(function(res) {
+              if (res && (res.status === "success" || res.success)) {
+                var directUrl = res.directUrl || 
+                  (res.fileId ? `https://lh3.googleusercontent.com/d/${res.fileId}=w800-rw` : res.url);
+                if (onStatusUpdate) onStatusUpdate(`✔ Uploaded successfully to Google Drive!`);
+                resolve({
+                  success: true,
+                  status: "success",
+                  fileId: res.fileId || "",
+                  fileUrl: res.url || directUrl,
+                  directUrl: directUrl,
+                  filename: file.name
+                });
+              } else {
+                reject(new Error(res ? res.message : "Upload failed"));
+              }
+            })
+            .withFailureHandler(function(err) {
+              reject(err);
+            })
+            .uploadPhoto(fullDataUrl, file.name);
+          return;
+        }
+
+        // 2. HTTP POST fallback for Localhost / External Web App
         const response = await fetch(IT_VISION_CONFIG.MEDIA_UPLOAD_ENDPOINT, {
           method: "POST",
           headers: {
@@ -83,14 +110,24 @@ async function uploadMediaToGoogleDrive(file, onStatusUpdate) {
         const result = await response.json();
 
         // Support various Google Apps Script response formats
-        if (result && (result.success || result.fileUrl || result.directUrl || result.url)) {
-          const directUrl = result.directUrl || 
-            (result.fileId ? `https://lh3.googleusercontent.com/d/${result.fileId}=w800-rw` : result.fileUrl || result.url);
-          
+        if (result && (result.success || result.status === "success" || result.fileUrl || result.directUrl || result.url)) {
+          let directUrl = result.directUrl;
+          if (!directUrl && result.url) {
+            var m = result.url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+            if (m && m[1]) {
+              directUrl = `https://lh3.googleusercontent.com/d/${m[1]}=w800-rw`;
+            } else {
+              directUrl = result.url;
+            }
+          } else if (!directUrl && result.fileId) {
+            directUrl = `https://lh3.googleusercontent.com/d/${result.fileId}=w800-rw`;
+          }
+
           if (onStatusUpdate) onStatusUpdate(`✔ Uploaded successfully to Google Drive!`);
           
           resolve({
             success: true,
+            status: "success",
             fileId: result.fileId || "",
             fileUrl: result.fileUrl || result.url || directUrl,
             directUrl: directUrl,

@@ -18,7 +18,8 @@ var SHEET_NAMES = {
 var FOLDERS = {
   ROOT: "IT_Vision_Assets",
   IMAGES: "Product_Images",
-  INVOICES: "Invoices_PDF"
+  INVOICES: "Invoices_PDF",
+  TARGET_MEDIA_FOLDER_ID: "1E2MflyKllRq2a5kiZmFargIe5PvA8_X6"
 };
 
 var BRANCHES = [
@@ -82,10 +83,15 @@ function doPost(e) {
     var decoded = Utilities.base64Decode(base64Data);
     var blob = Utilities.newBlob(decoded, mimeType, filename);
 
-    // Save to Google Drive IT_Vision_Assets -> Product_Images folder
-    var rootFolder = DriveApp.getRootFolder();
-    var appFolder = getOrCreateFolder(rootFolder, FOLDERS.ROOT);
-    var targetFolder = getOrCreateFolder(appFolder, FOLDERS.IMAGES);
+    // Save to specified Google Drive Target Folder
+    var targetFolder;
+    try {
+      targetFolder = DriveApp.getFolderById(FOLDERS.TARGET_MEDIA_FOLDER_ID);
+    } catch (fErr) {
+      var rootFolder = DriveApp.getRootFolder();
+      var appFolder = getOrCreateFolder(rootFolder, FOLDERS.ROOT);
+      targetFolder = getOrCreateFolder(appFolder, FOLDERS.IMAGES);
+    }
 
     var file = targetFolder.createFile(blob);
     file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
@@ -94,10 +100,12 @@ function doPost(e) {
     var directUrl = "https://lh3.googleusercontent.com/d/" + fileId + "=w800-rw";
 
     var output = {
+      status: "success",
       success: true,
       fileId: fileId,
       filename: filename,
       mimeType: mimeType,
+      url: file.getUrl(),
       fileUrl: file.getUrl(),
       directUrl: directUrl,
       downloadUrl: file.getDownloadUrl(),
@@ -109,9 +117,57 @@ function doPost(e) {
 
   } catch (err) {
     return ContentService.createTextOutput(JSON.stringify({
+      status: "error",
       success: false,
       error: "Upload handler error: " + err.toString()
     })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+/**
+ * Mobile Camera & Media Direct RPC Upload Engine
+ * Target Folder ID: 1E2MflyKllRq2a5kiZmFargIe5PvA8_X6
+ */
+function uploadPhoto(base64Data, fileName) {
+  try {
+    var folderId = FOLDERS.TARGET_MEDIA_FOLDER_ID;
+    var folder = DriveApp.getFolderById(folderId);
+
+    // Convert Base64 data to blob
+    var contentType = "image/jpeg";
+    if (base64Data.indexOf(';') !== -1 && base64Data.indexOf(':') !== -1) {
+      contentType = base64Data.substring(5, base64Data.indexOf(';'));
+    }
+
+    var rawBase64 = base64Data;
+    if (base64Data.indexOf(',') !== -1) {
+      rawBase64 = base64Data.split(',')[1];
+    }
+
+    var bytes = Utilities.base64Decode(rawBase64);
+    var blob = Utilities.newBlob(bytes, contentType, fileName || ("media_" + Date.now() + ".jpg"));
+
+    // Save file in Google Drive
+    var file = folder.createFile(blob);
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+    var fileId = file.getId();
+    var directUrl = "https://lh3.googleusercontent.com/d/" + fileId + "=w800-rw";
+
+    return {
+      status: "success",
+      success: true,
+      url: file.getUrl(),
+      fileUrl: file.getUrl(),
+      directUrl: directUrl,
+      fileId: fileId
+    };
+  } catch (error) {
+    return {
+      status: "error",
+      success: false,
+      message: error.toString()
+    };
   }
 }
 

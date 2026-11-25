@@ -306,7 +306,7 @@ const server = http.createServer(async (req, res) => {
     });
   }
 
-  // 2. Supabase Live Connection & Schema Health Check
+  // 2. Supabase Live Connection & Schema Health Check (single minimal query to avoid noisy schema logs)
   if (pathname === '/api/supabase/health' && req.method === 'GET') {
     const cfg = getSupabaseEnv();
     if (!cfg.url || (!cfg.secretKey && !cfg.publishableKey)) {
@@ -320,15 +320,14 @@ const server = http.createServer(async (req, res) => {
     }
 
     try {
-      const rootRes = await supabaseRestRequest({ method: 'GET', restPath: '/', useSecret: true });
-      const authValid = rootRes.statusCode >= 200 && rootRes.statusCode < 300;
       const tblRes = await supabaseRestRequest({
         method: 'GET',
         restPath: '/products?select=id&limit=1',
         useSecret: true
       });
       const tableExists = tblRes.statusCode >= 200 && tblRes.statusCode < 300;
-      const tableMissing = !tableExists && tblRes.data && tblRes.data.code === 'PGRST205';
+      const tableMissing = !tableExists && tblRes.data && (tblRes.data.code === 'PGRST205' || (tblRes.data.message && tblRes.data.message.includes('schema cache')));
+      const authValid = tableExists || tableMissing || (tblRes.statusCode !== 401 && tblRes.statusCode !== 403 && tblRes.statusCode < 500);
 
       return sendJson(res, 200, {
         success: authValid && tableExists,
@@ -357,18 +356,25 @@ const server = http.createServer(async (req, res) => {
   if (pathname === '/api/supabase/products') {
     try {
       if (req.method === 'GET') {
-        const supaRes = await supabaseRestRequest({
+        let supaRes = await supabaseRestRequest({
           method: 'GET',
-          restPath: '/products?select=id,name,price,photos_link,description,available_pcs&order=price.desc',
+          restPath: '/products?select=id,name,price,photos_link,description,available_pcs,category&order=price.desc',
           useSecret: true
         });
+        if (supaRes.data && (supaRes.data.code === 'PGRST204' || supaRes.data.code === '42703') && String(supaRes.data.message || '').includes('category')) {
+          supaRes = await supabaseRestRequest({
+            method: 'GET',
+            restPath: '/products?select=id,name,price,photos_link,description,available_pcs&order=price.desc',
+            useSecret: true
+          });
+        }
         if (supaRes.statusCode >= 200 && supaRes.statusCode < 300) {
           return sendJson(res, 200, {
             success: true,
             products: Array.isArray(supaRes.data) ? supaRes.data : []
           });
         }
-        const tableMissing = supaRes.data && supaRes.data.code === 'PGRST205';
+        const tableMissing = Boolean(supaRes.data && (supaRes.data.code === 'PGRST205' || String(supaRes.data.message || '').includes('schema cache')));
         return sendJson(res, supaRes.statusCode || 502, {
           success: false,
           tableMissing,
@@ -396,19 +402,32 @@ const server = http.createServer(async (req, res) => {
           available_pcs: parseInt(product.available_pcs, 10) || 0,
           updated_at: new Date().toISOString()
         };
+        if (product.category) {
+          payload.category = String(product.category).trim();
+        }
 
-        const supaRes = await supabaseRestRequest({
+        let supaRes = await supabaseRestRequest({
           method: 'POST',
           restPath: '/products?on_conflict=id',
           bodyObj: payload,
           useSecret: true,
           prefer: 'resolution=merge-duplicates,return=representation'
         });
+        if (supaRes.data && (supaRes.data.code === 'PGRST204' || supaRes.data.code === '42703') && String(supaRes.data.message || '').includes('category')) {
+          delete payload.category;
+          supaRes = await supabaseRestRequest({
+            method: 'POST',
+            restPath: '/products?on_conflict=id',
+            bodyObj: payload,
+            useSecret: true,
+            prefer: 'resolution=merge-duplicates,return=representation'
+          });
+        }
 
         if (supaRes.statusCode >= 200 && supaRes.statusCode < 300) {
           return sendJson(res, 200, { success: true, data: supaRes.data });
         }
-        const tableMissing = supaRes.data && supaRes.data.code === 'PGRST205';
+        const tableMissing = Boolean(supaRes.data && (supaRes.data.code === 'PGRST205' || String(supaRes.data.message || '').includes('schema cache')));
         return sendJson(res, supaRes.statusCode || 502, {
           success: false,
           tableMissing,
@@ -441,9 +460,14 @@ const server = http.createServer(async (req, res) => {
         if (supaRes.statusCode >= 200 && supaRes.statusCode < 300) {
           return sendJson(res, 200, { success: true, data: supaRes.data });
         }
+        const tableMissing = Boolean(supaRes.data && (supaRes.data.code === 'PGRST205' || String(supaRes.data.message || '').includes('schema cache')));
         return sendJson(res, supaRes.statusCode || 502, {
           success: false,
-          error: (supaRes.data && supaRes.data.message) || 'Failed to delete product from Supabase.'
+          tableMissing,
+          code: supaRes.data && supaRes.data.code,
+          error: tableMissing
+            ? "Table 'public.products' does not exist in Supabase yet. Run supabase_schema.sql in Supabase SQL Editor."
+            : (supaRes.data && supaRes.data.message) || 'Failed to delete product from Supabase.'
         });
       }
 

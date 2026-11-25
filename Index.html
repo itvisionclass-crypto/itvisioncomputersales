@@ -736,8 +736,9 @@
       overflow: hidden;
       margin-bottom: 10px;
       position: relative;
+      cursor: pointer;
     }
-    .card-thumb-wrap img {
+    .card-thumb-wrap img, .card-thumb-wrap video {
       max-width: 100%;
       max-height: 100%;
       object-fit: contain;
@@ -746,6 +747,134 @@
     .product-card:hover .card-thumb-wrap img {
       transform: scale(1.04);
     }
+    .card-media-count-badge {
+      position: absolute;
+      bottom: 6px;
+      right: 6px;
+      background: rgba(15, 23, 42, 0.78);
+      color: #FFFFFF;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 999px;
+      backdrop-filter: blur(4px);
+      pointer-events: none;
+    }
+    .card-video-badge {
+      position: absolute;
+      bottom: 6px;
+      left: 6px;
+      background: rgba(249, 115, 22, 0.92);
+      color: #FFFFFF;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 999px;
+      pointer-events: none;
+    }
+
+    /* Multi-Media Chips inside Admin Form */
+    .form-media-chips-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .form-media-chip {
+      position: relative;
+      background: #FFFFFF;
+      border: 1px solid #CBD5E1;
+      border-radius: 6px;
+      padding: 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .form-media-chip-remove {
+      position: absolute;
+      top: 3px;
+      right: 3px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: none;
+      background: #DC2626;
+      color: #FFFFFF;
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    /* Lightbox Modal for Product Media Gallery & New Category Modal */
+    .itv-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.78);
+      z-index: 9999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .itv-modal-overlay.open {
+      display: flex;
+    }
+    .itv-modal-box {
+      background: #FFFFFF;
+      border-radius: 10px;
+      width: 100%;
+      max-width: 680px;
+      max-height: 90vh;
+      overflow: hidden;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+      display: flex;
+      flex-direction: column;
+    }
+    .itv-modal-header {
+      background: var(--color-primary-navy);
+      color: #FFFFFF;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+    .itv-lightbox-stage {
+      position: relative;
+      background: #0F172A;
+      min-height: 320px;
+      max-height: 65vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .itv-lightbox-arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      background: rgba(15, 23, 42, 0.85);
+      color: #FFFFFF;
+      font-size: 18px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 3;
+      transition: background 0.15s ease;
+    }
+    .itv-lightbox-arrow:hover {
+      background: var(--color-accent-orange);
+    }
+    .itv-lightbox-arrow.prev { left: 12px; }
+    .itv-lightbox-arrow.next { right: 12px; }
 
     .card-category-label {
       font-size: 10px;
@@ -1488,7 +1617,7 @@
        ========================================================================== -->
   <nav class="category-nav-bar">
     <div class="container">
-      <ul class="nav-links-row">
+      <ul class="nav-links-row" id="main-nav-links-row">
         <li><a href="#hardware" class="nav-item-btn active" id="nav-btn-hardware">All Hardware</a></li>
         <li><a href="#combos" class="nav-item-btn" id="nav-btn-combos">⚡ Combo Deals <span class="badge-highlight">Hot</span></a></li>
         <li><a href="#desktops" class="nav-item-btn" id="nav-btn-desktops">Desktops (OptiPlex)</a></li>
@@ -1867,22 +1996,45 @@
 
         <!-- Supabase Products Management Form (Only Entity in Supabase) -->
         <div class="admin-table-box">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid var(--color-border-hairline); padding-bottom:8px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px; border-bottom:1px solid var(--color-border-hairline); padding-bottom:8px;">
             <div>
               <h4 style="color:var(--color-primary-navy); font-size:15px; font-weight:800;">
                 ⚡ Supabase Products Database (mztnzrpfpszfieooeprj)
               </h4>
               <p style="font-size:11px; color:var(--color-text-secondary);">
-                Relational schema: <code>id</code>, <code>name</code>, <code>price</code>, <code>photos_link (URL)</code>, <code>description</code>, <code>available_pcs</code>
+                Relational schema: <code>id</code>, <code>name</code>, <code>price</code>, <code>category</code>, <code>photos_link</code> (up to 4 media), <code>description</code>, <code>available_pcs</code>
               </p>
             </div>
-            <button class="btn-bulk-step" style="padding:4px 12px; height:auto;" onclick="refreshSupabaseProductsTable()">
-              🔄 Sync with Supabase
-            </button>
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+              <button type="button" class="btn-bulk-step" style="padding:4px 12px; height:auto; background:#EFF6FF; color:var(--color-primary-navy); border-color:#BFDBFE; font-weight:700;" onclick="openNewCategoryModal()">
+                ➕ New Category
+              </button>
+              <button type="button" class="btn-bulk-step" style="padding:4px 12px; height:auto;" onclick="refreshSupabaseProductsTable(true)">
+                🔄 Sync with Supabase
+              </button>
+            </div>
           </div>
 
-          <!-- Product Entry Form with Integrated Google Drive Media Upload & Autodetect -->
-          <form id="admin-product-form" onsubmit="handleSaveProductToSupabase(event)" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-bottom:20px; background:var(--color-bg-subtle); padding:16px; border-radius:8px;">
+          <!-- Schema Setup Notice Banner (Visible only when PGRST205 public.products is missing) -->
+          <div id="admin-supabase-schema-alert" style="display:none; background:#FEF3C7; border:1px solid #F59E0B; border-radius:6px; padding:10px 12px; margin-bottom:14px; font-size:11px; color:#92400E;">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+              <div>
+                <strong>⚠ Supabase Table Not Found (<code>public.products</code> / <code>PGRST205</code>):</strong>
+                Saves and deletes currently update your local catalog cache. Run <code>supabase_schema.sql</code> in Supabase SQL Editor to enable live cloud sync.
+              </div>
+              <button type="button" class="btn-bulk-step" style="background:#FFFFFF; border-color:#D97706; color:#92400E; font-weight:700; white-space:nowrap;" onclick="copySupabaseSchemaSql()">
+                📋 Copy Setup SQL
+              </button>
+            </div>
+          </div>
+
+          <!-- Product Entry Form with Category Manager, Edit Mode & 4-Media Drive Upload -->
+          <form id="admin-product-form" onsubmit="handleSaveProductToSupabase(event)" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:12px; margin-bottom:20px; background:var(--color-bg-subtle); padding:16px; border-radius:8px;">
+            <div id="admin-form-edit-banner" style="display:none; grid-column:1 / -1; background:#DBEAFE; border:1px solid #93C5FD; color:#1E3A8A; padding:8px 12px; border-radius:6px; font-size:12px; font-weight:700; justify-content:space-between; align-items:center;">
+              <span id="admin-form-edit-label">✏️ Editing Product</span>
+              <button type="button" class="btn-bulk-step" style="background:#FFFFFF; color:#1E3A8A; border-color:#93C5FD;" onclick="resetProductForm()">Cancel Edit</button>
+            </div>
+
             <div class="form-group-sm">
               <label>Product ID (*PK):</label>
               <input type="text" id="prod-form-id" class="form-ctrl-sm" placeholder="e.g. ITV-PROD-011" required>
@@ -1890,6 +2042,24 @@
             <div class="form-group-sm">
               <label>Product Name:</label>
               <input type="text" id="prod-form-name" class="form-ctrl-sm" placeholder="e.g. HP LaserJet 1020 Plus" required>
+            </div>
+            <div class="form-group-sm">
+              <div style="display:flex; justify-content:space-between; align-items:center; gap:6px; margin-bottom:3px;">
+                <label style="margin:0;">Category (Page):</label>
+                <button type="button" id="btn-new-category-page" class="btn-bulk-step" style="background:#EFF6FF; color:var(--color-primary-navy); border-color:#BFDBFE; font-weight:700; padding:1px 7px; height:auto; font-size:10px; cursor:pointer;" onclick="openNewCategoryModal()">
+                  ➕ New
+                </button>
+              </div>
+              <select id="prod-form-category" class="form-ctrl-sm" required>
+                <option value="Combo">⚡ Combo Deals Hot</option>
+                <option value="Desktop">🖥️ Desktops (OptiPlex)</option>
+                <option value="Laptop">💻 Refurb Laptops</option>
+                <option value="Printer">🖨️ Laser Printers (HP)</option>
+                <option value="Cartridge">🧪 Toner Cartridges</option>
+                <option value="Security">📹 CCTV &amp; Security</option>
+                <option value="Accessories">⌨️ Peripherals</option>
+                <option value="Hardware">🛒 All Hardware</option>
+              </select>
             </div>
             <div class="form-group-sm">
               <label>Price (₹):</label>
@@ -1900,17 +2070,28 @@
               <input type="number" id="prod-form-stock" class="form-ctrl-sm" placeholder="e.g. 25" min="0" required>
             </div>
 
-            <!-- Upload Media Button & Progress (Photos & Videos -> Google Drive Script) -->
+            <!-- Upload Media Button & Multi-Media Manager (Up to 4 Photos & Videos -> Google Drive Script) -->
             <div class="form-group-sm" style="grid-column:1 / -1; background:#FFFFFF; border:1px solid var(--color-border-hairline); border-radius:6px; padding:14px;">
               <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:10px;">
-                <label style="font-weight:700; color:var(--color-primary-navy); margin:0;">
-                  Photos / Media Link:
-                </label>
-                <div style="display:flex; align-items:center; gap:8px;">
-                  <input type="file" id="form-media-file-input" accept="image/*,video/*" style="display:none;" onchange="handleAutoMediaUpload(this)">
+                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                  <label style="font-weight:700; color:var(--color-primary-navy); margin:0;">
+                    Photos / Media Gallery:
+                  </label>
+                  <span id="media-count-badge" style="font-size:10px; font-weight:700; background:#F1F5F9; color:#334155; padding:2px 8px; border-radius:999px; border:1px solid #CBD5E1;">
+                    0 / 4 Media
+                  </span>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                  <input type="file" id="form-media-file-input" accept="image/*,video/*" multiple style="display:none;" onchange="handleAutoMediaUpload(this)">
                   <button type="button" id="btn-upload-media" class="btn-checkout-confirm" style="width:auto; height:34px; padding:0 18px; background:var(--color-primary-navy); font-size:12px; display:inline-flex; align-items:center; gap:6px; cursor:pointer;" data-script-url="https://script.google.com/macros/s/AKfycbxRR30Z9eMtp6WntWzfIB8Bg52jPWXah-b4pDQsFeOR6fn0A6TqTmocbZSVFlE4Ip4noQ/exec" onclick="triggerUploadMedia()">
                     📤 Upload Media
                   </button>
+                  <button type="button" id="btn-add-upload-media" class="btn-checkout-confirm" style="display:none; width:auto; height:34px; padding:0 16px; background:var(--color-accent-orange); font-size:12px; align-items:center; gap:6px; cursor:pointer;" data-script-url="https://script.google.com/macros/s/AKfycbxRR30Z9eMtp6WntWzfIB8Bg52jPWXah-b4pDQsFeOR6fn0A6TqTmocbZSVFlE4Ip4noQ/exec" onclick="triggerUploadMedia()">
+                    ➕ Add Upload Media
+                  </button>
+                  <span id="media-limit-badge" style="display:none; font-size:11px; font-weight:700; color:var(--color-success-green); background:#DCFCE7; padding:6px 12px; border-radius:6px;">
+                    ✔ Max 4 / 4 Media Uploaded
+                  </span>
                 </div>
               </div>
 
@@ -1925,10 +2106,13 @@
                 </div>
               </div>
 
-              <!-- Auto-Filled Media URL Input -->
-              <input type="url" id="prod-form-photolink" class="form-ctrl-sm" placeholder="Media link auto-fills after selecting photo or video..." oninput="handleAutoDetectLink(this.value)" required>
+              <!-- Auto-Filled Media URL Input (supports 1 URL or JSON array of up to 4 URLs) -->
+              <div style="display:flex; gap:6px; align-items:center;">
+                <input type="text" id="prod-form-photolink" class="form-ctrl-sm" style="flex:1;" placeholder="Media link auto-fills after selecting photo/video (or paste a link & click + Add)..." oninput="handleAutoDetectLink(this.value)" required>
+                <button type="button" class="btn-bulk-step" style="white-space:nowrap; height:32px; padding:0 10px;" onclick="addPastedMediaUrl()">+ Add Link</button>
+              </div>
 
-              <!-- Live Photo / Video Preview -->
+              <!-- Live Photo / Video Gallery Chips (<= 4 Items) -->
               <div id="form-media-preview" style="display:none; margin-top:8px; padding:8px; background:var(--color-bg-subtle); border-radius:4px;"></div>
             </div>
 
@@ -1936,8 +2120,8 @@
               <label>Description:</label>
               <textarea id="prod-form-description" class="form-ctrl-sm" style="height:60px; padding:6px 10px;" placeholder="Full product specifications, warranty info, and condition notes..." required></textarea>
             </div>
-            <div style="grid-column:1 / -1; display:flex; gap:10px;">
-              <button type="submit" class="btn-checkout-confirm" style="width:auto; padding:0 24px; background:var(--color-success-green);">
+            <div style="grid-column:1 / -1; display:flex; gap:10px; flex-wrap:wrap;">
+              <button type="submit" id="btn-save-product-submit" class="btn-checkout-confirm" style="width:auto; padding:0 24px; background:var(--color-success-green);">
                 💾 Save Product to Supabase
               </button>
               <button type="button" class="btn-hero-secondary" style="background:#E2E8F0; color:#0F172A;" onclick="resetProductForm()">
@@ -1951,13 +2135,13 @@
           <table class="admin-table">
             <thead>
               <tr>
-                <th style="width:12%;">ID</th>
-                <th style="width:12%;">Media Photo</th>
-                <th style="width:24%;">Product Name</th>
-                <th style="width:12%;">Price (₹)</th>
-                <th style="width:26%;">Description</th>
-                <th style="width:8%;">Avail Pcs</th>
-                <th style="width:6%;">Action</th>
+                <th style="width:11%;">ID</th>
+                <th style="width:10%;">Media</th>
+                <th style="width:22%;">Product Name &amp; Category</th>
+                <th style="width:10%;">Price (₹)</th>
+                <th style="width:27%;">Description</th>
+                <th style="width:7%;">Avail</th>
+                <th style="width:13%;">Actions</th>
               </tr>
             </thead>
             <tbody id="admin-supabase-products-tbody">
@@ -2110,6 +2294,65 @@
       </button>
     </div>
   </aside>
+
+  <!-- ==========================================================================
+       PRODUCT MEDIA GALLERY LIGHTBOX MODAL (Up to 4 Media Items + Left/Right Arrows)
+       ========================================================================== -->
+  <div id="product-media-modal" class="itv-modal-overlay" onclick="if(event.target===this) closeProductMediaModal()">
+    <div class="itv-modal-box">
+      <div class="itv-modal-header">
+        <div>
+          <div id="lightbox-product-title" style="font-size:14px; font-weight:700;">Product Media Viewer</div>
+          <div id="lightbox-media-counter" style="font-size:11px; opacity:0.85;">Media 1 of 1</div>
+        </div>
+        <button type="button" class="btn-close-drawer" style="color:#FFFFFF;" onclick="closeProductMediaModal()">&times;</button>
+      </div>
+      <div class="itv-lightbox-stage">
+        <button type="button" id="lightbox-prev-btn" class="itv-lightbox-arrow prev" title="Previous Media" onclick="stepProductMediaModal(-1)">&#9664;</button>
+        <div id="lightbox-stage-content" style="width:100%; display:flex; align-items:center; justify-content:center; min-height:280px;"></div>
+        <button type="button" id="lightbox-next-btn" class="itv-lightbox-arrow next" title="Next Media" onclick="stepProductMediaModal(1)">&#9654;</button>
+      </div>
+      <div id="lightbox-thumbs-strip" style="display:flex; gap:8px; padding:10px 14px; background:#F8FAFC; border-top:1px solid #E2E8F0; justify-content:center; flex-wrap:wrap;"></div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       CREATE NEW CATEGORY PAGE MODAL
+       ========================================================================== -->
+  <div id="new-category-modal" class="itv-modal-overlay" onclick="if(event.target===this) closeNewCategoryModal()">
+    <div class="itv-modal-box" style="max-width:460px;">
+      <div class="itv-modal-header">
+        <div style="font-size:14px; font-weight:700;">➕ Create New Category &amp; Dedicated Page</div>
+        <button type="button" class="btn-close-drawer" style="color:#FFFFFF;" onclick="closeNewCategoryModal()">&times;</button>
+      </div>
+      <form id="new-category-form" onsubmit="handleSaveNewCategory(event)" style="padding:16px; display:flex; flex-direction:column; gap:12px;">
+        <div class="form-group-sm">
+          <label>Category Name (*Required):</label>
+          <input type="text" id="new-cat-name" class="form-ctrl-sm" placeholder="e.g. Gaming Monitors" oninput="autoSlugNewCategory(this.value)" required>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 90px; gap:10px;">
+          <div class="form-group-sm">
+            <label>Page URL Route (#slug):</label>
+            <input type="text" id="new-cat-slug" class="form-ctrl-sm" placeholder="e.g. gaming-monitors" required>
+          </div>
+          <div class="form-group-sm">
+            <label>Icon Emoji:</label>
+            <input type="text" id="new-cat-icon" class="form-ctrl-sm" value="📦" maxlength="4">
+          </div>
+        </div>
+        <div class="form-group-sm">
+          <label>Page Subtitle (Optional):</label>
+          <input type="text" id="new-cat-subtitle" class="form-ctrl-sm" placeholder="Certified hardware & accessories in this category.">
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:4px;">
+          <button type="button" class="btn-bulk-step" style="padding:6px 14px; height:auto;" onclick="closeNewCategoryModal()">Cancel</button>
+          <button type="submit" class="btn-checkout-confirm" style="width:auto; padding:6px 18px; background:var(--color-primary-navy);">
+            ✔ Create Category Page
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <!-- ==========================================================================
        MOBILE PERSISTENT BOTTOM CONTROL BAR (<640px)
@@ -2327,13 +2570,426 @@
       }
     ];
 
+    // Runtime Cache & Multi-Media / Category State
+    var CATALOG_CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes to minimize Supabase API & Log queries
+    var TABLE_MISSING_COOLDOWN_MS = 10 * 60 * 1000; // Avoid hammering missing-table 404 logs
+    window.ITVisionMediaFormList = [];
+    window.ITVisionEditingProductId = null;
+    window.ITVisionLightboxState = { title: "", items: [], index: 0 };
+
+    function safeStorageGet(storageObj, key) {
+      try {
+        return storageObj && typeof storageObj.getItem === "function" ? storageObj.getItem(key) : null;
+      } catch (_) { return null; }
+    }
+
+    function safeStorageSet(storageObj, key, val) {
+      try {
+        if (storageObj && typeof storageObj.setItem === "function") storageObj.setItem(key, val);
+      } catch (_) {}
+    }
+
+    function safeStorageRemove(storageObj, key) {
+      try {
+        if (!storageObj) return;
+        if (typeof storageObj.removeItem === "function") storageObj.removeItem(key);
+        else if (typeof storageObj.setItem === "function") storageObj.setItem(key, "");
+      } catch (_) {}
+    }
+
+    function escapeHtml(str) {
+      return String(str == null ? "" : str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function getSavedProductCategoryMap() {
+      var raw = safeStorageGet(typeof localStorage !== "undefined" ? localStorage : null, "ITV_PRODUCT_CATEGORY_MAP");
+      if (!raw) return {};
+      try { return JSON.parse(raw) || {}; } catch (_) { return {}; }
+    }
+
+    function saveProductCategoryMapping(productId, category) {
+      if (!productId || !category) return;
+      var map = getSavedProductCategoryMap();
+      map[String(productId)] = String(category);
+      safeStorageSet(typeof localStorage !== "undefined" ? localStorage : null, "ITV_PRODUCT_CATEGORY_MAP", JSON.stringify(map));
+    }
+
+    function getDeletedLocalIds() {
+      var raw = safeStorageGet(typeof localStorage !== "undefined" ? localStorage : null, "ITV_DELETED_LOCAL_IDS");
+      if (!raw) return [];
+      try {
+        var parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (_) { return []; }
+    }
+
+    function addDeletedLocalId(productId) {
+      if (!productId) return;
+      var list = getDeletedLocalIds();
+      if (!list.includes(productId)) list.push(productId);
+      safeStorageSet(typeof localStorage !== "undefined" ? localStorage : null, "ITV_DELETED_LOCAL_IDS", JSON.stringify(list));
+    }
+
+    function removeDeletedLocalId(productId) {
+      if (!productId) return;
+      var list = getDeletedLocalIds().filter(function(id) { return id !== productId; });
+      safeStorageSet(typeof localStorage !== "undefined" ? localStorage : null, "ITV_DELETED_LOCAL_IDS", JSON.stringify(list));
+    }
+
+    /**
+     * Multi-Media Parsing & Google Drive Video/Image Detection (max 4 items)
+     */
+    function extractDriveFileId(url) {
+      if (!url) return "";
+      var s = String(url);
+      var m1 = s.match(/googleusercontent\.com\/d\/([a-zA-Z0-9_-]+)/);
+      if (m1 && m1[1]) return m1[1];
+      var m2 = s.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+      if (m2 && m2[1]) return m2[1];
+      var m3 = s.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+      if (m3 && m3[1]) return m3[1];
+      return "";
+    }
+
+    function detectMediaKind(url, explicitMime) {
+      var mime = (explicitMime || "").toLowerCase();
+      if (mime.startsWith("video/")) return "video";
+      if (mime.startsWith("audio/")) return "audio";
+      var lower = (url || "").toLowerCase();
+      if (lower.includes("#itv=video") || lower.includes("#type=video") || /\.(mp4|webm|mov|m4v)(\?|#|$)/.test(lower) || lower.startsWith("data:video/")) {
+        return "video";
+      }
+      if (lower.includes("#itv=audio") || /\.(mp3|wav|ogg)(\?|#|$)/.test(lower) || lower.startsWith("data:audio/")) {
+        return "audio";
+      }
+      return "image";
+    }
+
+    function parseProductMediaList(photosLink, fallbackDriveId) {
+      var rawUrls = [];
+      if (Array.isArray(photosLink)) {
+        rawUrls = photosLink;
+      } else if (typeof photosLink === "string" && photosLink.trim()) {
+        var trimmed = photosLink.trim();
+        if (trimmed.startsWith("[")) {
+          try {
+            var parsed = JSON.parse(trimmed);
+            if (Array.isArray(parsed)) rawUrls = parsed;
+          } catch (_) {
+            rawUrls = [trimmed];
+          }
+        } else if (trimmed.includes(",") && (trimmed.match(/https?:\/\/|data:/g) || []).length > 1) {
+          rawUrls = trimmed.split(/\s*,\s*(?=https?:\/\/|data:)/);
+        } else {
+          rawUrls = [trimmed];
+        }
+      }
+
+      var items = [];
+      for (var i = 0; i < rawUrls.length && items.length < 4; i++) {
+        var entry = rawUrls[i];
+        var u = typeof entry === "string" ? entry.trim() : (entry && entry.url ? String(entry.url).trim() : "");
+        if (!u) continue;
+        var kind = (entry && entry.kind) ? entry.kind : detectMediaKind(u, entry && entry.mimeType);
+        items.push({ url: u, kind: kind });
+      }
+
+      if (items.length === 0 && fallbackDriveId) {
+        items.push({ url: formatDriveImageUrl(fallbackDriveId, 400), kind: "image" });
+      }
+      return items;
+    }
+
+    function serializeProductMediaList(mediaList) {
+      var clean = (mediaList || []).filter(function(m) { return m && m.url; }).slice(0, 4);
+      if (clean.length === 0) return "";
+      if (clean.length === 1) return clean[0].url;
+      return JSON.stringify(clean.map(function(m) { return m.url; }));
+    }
+
+    function openProductMediaModal(productId) {
+      var list = window.ITVisionState.catalogCache || [];
+      var prod = list.find(function(item) { return (item.id || item.product_id) === productId; });
+      if (!prod) return;
+
+      var items = parseProductMediaList(prod.photos_link, prod.drive_image_id);
+      if (items.length === 0) {
+        items = [{ url: formatDriveImageUrl("", 400), kind: "image" }];
+      }
+
+      window.ITVisionLightboxState = {
+        title: prod.name || prod.title || productId,
+        items: items,
+        index: 0
+      };
+
+      var modal = document.getElementById("product-media-modal");
+      if (modal) modal.classList.add("open");
+      renderProductMediaModalSlide();
+    }
+
+    function closeProductMediaModal() {
+      var modal = document.getElementById("product-media-modal");
+      if (modal) modal.classList.remove("open");
+      var stage = document.getElementById("lightbox-stage-content");
+      if (stage) stage.innerHTML = "";
+    }
+
+    function stepProductMediaModal(delta) {
+      var st = window.ITVisionLightboxState;
+      if (!st || !st.items || st.items.length <= 1) return;
+      st.index = (st.index + delta + st.items.length) % st.items.length;
+      renderProductMediaModalSlide();
+    }
+
+    function renderProductMediaModalSlide() {
+      var st = window.ITVisionLightboxState;
+      if (!st || !st.items || st.items.length === 0) return;
+
+      var titleEl = document.getElementById("lightbox-product-title");
+      var counterEl = document.getElementById("lightbox-media-counter");
+      var stageEl = document.getElementById("lightbox-stage-content");
+      var prevBtn = document.getElementById("lightbox-prev-btn");
+      var nextBtn = document.getElementById("lightbox-next-btn");
+      var stripEl = document.getElementById("lightbox-thumbs-strip");
+
+      var cur = st.items[st.index];
+      var hasMany = st.items.length > 1;
+
+      if (titleEl) titleEl.innerText = st.title;
+      if (counterEl) counterEl.innerText = `Media ${st.index + 1} of ${st.items.length}`;
+      if (prevBtn && prevBtn.style) prevBtn.style.display = hasMany ? "flex" : "none";
+      if (nextBtn && nextBtn.style) nextBtn.style.display = hasMany ? "flex" : "none";
+
+      if (stageEl) {
+        var cleanUrl = cur.url.replace(/#itv=(video|audio)$/i, "");
+        if (cur.kind === "video") {
+          var driveId = extractDriveFileId(cleanUrl);
+          if (driveId && cleanUrl.includes("drive.google.com")) {
+            stageEl.innerHTML = `<iframe src="https://drive.google.com/file/d/${driveId}/preview" allow="autoplay" allowfullscreen style="width:100%; height:360px; border:none; border-radius:6px; background:#000;"></iframe>`;
+          } else {
+            stageEl.innerHTML = `<video src="${escapeHtml(cleanUrl)}" controls autoplay style="max-width:100%; max-height:58vh; border-radius:6px; background:#000;"></video>`;
+          }
+        } else if (cur.kind === "audio") {
+          stageEl.innerHTML = `<audio src="${escapeHtml(cleanUrl)}" controls autoplay style="width:90%;"></audio>`;
+        } else {
+          stageEl.innerHTML = `<img src="${escapeHtml(cleanUrl)}" alt="${escapeHtml(st.title)}" style="max-width:100%; max-height:58vh; object-fit:contain; border-radius:6px;" onerror="this.src='https://via.placeholder.com/500?text=IT+Vision+Media'">`;
+        }
+      }
+
+      if (stripEl) {
+        if (!hasMany) {
+          stripEl.style.display = "none";
+          stripEl.innerHTML = "";
+        } else {
+          stripEl.style.display = "flex";
+          var thumbsHtml = "";
+          for (var i = 0; i < st.items.length; i++) {
+            var it = st.items[i];
+            var activeBorder = i === st.index ? "2px solid var(--color-accent-orange)" : "1px solid #CBD5E1";
+            var cleanThumb = it.url.replace(/#itv=(video|audio)$/i, "");
+            if (it.kind === "video") {
+              thumbsHtml += `<button type="button" onclick="window.ITVisionLightboxState.index=${i}; renderProductMediaModalSlide();" style="width:54px; height:42px; border:${activeBorder}; border-radius:4px; background:#0F172A; color:#FFFFFF; font-size:11px; font-weight:700; cursor:pointer;">▶ #${i + 1}</button>`;
+            } else {
+              thumbsHtml += `<button type="button" onclick="window.ITVisionLightboxState.index=${i}; renderProductMediaModalSlide();" style="width:54px; height:42px; padding:2px; border:${activeBorder}; border-radius:4px; background:#FFFFFF; cursor:pointer; overflow:hidden;"><img src="${escapeHtml(cleanThumb)}" style="width:100%; height:100%; object-fit:contain;"></button>`;
+            }
+          }
+          stripEl.innerHTML = thumbsHtml;
+        }
+      }
+    }
+
+    /**
+     * Custom Category Management (+ New Category -> Dedicated Page & Nav Link)
+     */
+    function getCustomCategories() {
+      var raw = safeStorageGet(typeof localStorage !== "undefined" ? localStorage : null, "ITV_CUSTOM_CATEGORIES");
+      if (!raw) return [];
+      try {
+        var arr = JSON.parse(raw);
+        return Array.isArray(arr) ? arr : [];
+      } catch (_) { return []; }
+    }
+
+    function saveCustomCategoriesList(list) {
+      safeStorageSet(typeof localStorage !== "undefined" ? localStorage : null, "ITV_CUSTOM_CATEGORIES", JSON.stringify(list || []));
+    }
+
+    function syncCustomCategoriesUI() {
+      var customList = getCustomCategories();
+      var navRow = document.getElementById("main-nav-links-row");
+      var repairsBtn = document.getElementById("nav-btn-repairs");
+      var repairsLi = repairsBtn && repairsBtn.parentElement ? repairsBtn.parentElement : null;
+      var selectEl = document.getElementById("prod-form-category");
+
+      for (var i = 0; i < customList.length; i++) {
+        var c = customList[i];
+        if (!c || !c.slug || !c.name) continue;
+        var navId = "nav-btn-" + c.slug;
+
+        if (typeof PAGE_CONFIGS === "object" && PAGE_CONFIGS) {
+          PAGE_CONFIGS[c.slug] = {
+            title: (c.icon ? c.icon + " " : "") + c.name,
+            badge: "✨ CUSTOM CATEGORY",
+            subtitle: c.subtitle || ("Dedicated catalog for " + c.name + " hardware & accessories."),
+            category: c.categoryValue || c.name,
+            showHero: false,
+            showBubbles: false,
+            showCatalog: true,
+            showRepairs: false,
+            showWholesale: false,
+            navId: navId
+          };
+        }
+
+        if (navRow && typeof document.createElement === "function" && !document.getElementById(navId)) {
+          var li = document.createElement("li");
+          var a = document.createElement("a");
+          a.href = "#" + c.slug;
+          a.className = "nav-item-btn";
+          a.id = navId;
+          a.innerText = (c.icon ? c.icon + " " : "") + c.name;
+          if (repairsLi && repairsLi.parentNode === navRow) {
+            navRow.insertBefore(li, repairsLi);
+          } else if (typeof navRow.appendChild === "function") {
+            navRow.appendChild(li);
+          }
+          li.appendChild(a);
+        }
+
+        if (selectEl && selectEl.options && typeof document.createElement === "function") {
+          var catVal = c.categoryValue || c.name;
+          var exists = false;
+          for (var j = 0; j < selectEl.options.length; j++) {
+            if (selectEl.options[j].value === catVal) { exists = true; break; }
+          }
+          if (!exists) {
+            var opt = document.createElement("option");
+            opt.value = catVal;
+            opt.innerText = (c.icon ? c.icon + " " : "") + c.name;
+            selectEl.appendChild(opt);
+          }
+        }
+      }
+    }
+
+    function openNewCategoryModal() {
+      var modal = document.getElementById("new-category-modal");
+      var form = document.getElementById("new-category-form");
+      if (form && typeof form.reset === "function") form.reset();
+      if (modal) modal.classList.add("open");
+    }
+
+    function closeNewCategoryModal() {
+      var modal = document.getElementById("new-category-modal");
+      if (modal) modal.classList.remove("open");
+    }
+
+    function autoSlugNewCategory(nameVal) {
+      var slugInput = document.getElementById("new-cat-slug");
+      if (!slugInput) return;
+      slugInput.value = String(nameVal || "")
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9\s-]/g, "")
+        .replace(/\s+/g, "-")
+        .replace(/-+/g, "-");
+    }
+
+    function handleSaveNewCategory(event) {
+      if (event) event.preventDefault();
+      var nameEl = document.getElementById("new-cat-name");
+      var slugEl = document.getElementById("new-cat-slug");
+      var iconEl = document.getElementById("new-cat-icon");
+      var subEl = document.getElementById("new-cat-subtitle");
+
+      var name = nameEl ? nameEl.value.trim() : "";
+      var rawSlug = slugEl ? slugEl.value.trim() : "";
+      var slug = rawSlug.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
+      var icon = iconEl && iconEl.value.trim() ? iconEl.value.trim() : "📦";
+      var subtitle = subEl ? subEl.value.trim() : "";
+
+      if (!name || !slug) {
+        alert("Please enter both a Category Name and a valid Page Route slug.");
+        return;
+      }
+
+      var reserved = ["hardware", "combos", "desktops", "laptops", "printers", "cartridges", "security", "peripherals", "repairs", "admin"];
+      if (reserved.includes(slug)) {
+        alert("That route slug is reserved for a built-in page. Please pick a unique slug.");
+        return;
+      }
+
+      var list = getCustomCategories().filter(function(item) { return item.slug !== slug; });
+      list.push({
+        name: name,
+        slug: slug,
+        categoryValue: name,
+        icon: icon,
+        subtitle: subtitle
+      });
+      saveCustomCategoriesList(list);
+      syncCustomCategoriesUI();
+
+      var catSelect = document.getElementById("prod-form-category");
+      if (catSelect) catSelect.value = name;
+
+      closeNewCategoryModal();
+      alert(`✔ Created Category "${icon} ${name}" and dedicated storefront page "#${slug}"!`);
+    }
+
+    function setSchemaMissingBannerVisible(visible) {
+      var el = document.getElementById("admin-supabase-schema-alert");
+      if (el && el.style) el.style.display = visible ? "block" : "none";
+    }
+
+    function copySupabaseSchemaSql() {
+      var sql = "CREATE TABLE IF NOT EXISTS public.products (\n" +
+        "  id VARCHAR(50) PRIMARY KEY,\n" +
+        "  name VARCHAR(255) NOT NULL,\n" +
+        "  price NUMERIC(10, 2) NOT NULL,\n" +
+        "  category VARCHAR(100) DEFAULT 'Hardware',\n" +
+        "  photos_link TEXT,\n" +
+        "  description TEXT,\n" +
+        "  available_pcs INTEGER DEFAULT 0,\n" +
+        "  created_at TIMESTAMPTZ DEFAULT NOW(),\n" +
+        "  updated_at TIMESTAMPTZ DEFAULT NOW()\n" +
+        ");\n" +
+        "ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;\n" +
+        "CREATE POLICY \"Allow full access on products\" ON public.products FOR ALL USING (true) WITH CHECK (true);";
+
+      if (typeof navigator !== "undefined" && navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(sql).then(function() {
+          alert("✔ Copied CREATE TABLE public.products SQL to clipboard! Paste & Run in Supabase SQL Editor.");
+        }).catch(function() {
+          alert("Run this in Supabase SQL Editor:\n\n" + sql);
+        });
+      } else {
+        alert("Run this in Supabase SQL Editor:\n\n" + sql);
+      }
+    }
+
     // Initialize application on DOMContentLoaded
     document.addEventListener("DOMContentLoaded", function() {
-      initCatalogData();
+      syncCustomCategoriesUI();
+      initCatalogData(false);
       initCartFromStorage();
       setupSearchListeners();
       handleHashRouting();
       window.addEventListener("hashchange", handleHashRouting);
+      window.addEventListener("keydown", function(e) {
+        var modal = document.getElementById("product-media-modal");
+        if (modal && modal.classList && modal.classList.contains("open")) {
+          if (e.key === "ArrowLeft") stepProductMediaModal(-1);
+          else if (e.key === "ArrowRight") stepProductMediaModal(1);
+          else if (e.key === "Escape") closeProductMediaModal();
+        }
+      });
     });
 
     /**
@@ -2348,12 +3004,16 @@
     }
 
     /**
-     * Infer product category from SKU prefix or title/description so Supabase rows
-     * cleanly populate the separated category pages.
+     * Resolve product category from DB column, local saved map, or SKU/title fallback
      */
     function inferProductCategory(p) {
-      if (p.category && p.category !== "Hardware") return p.category;
-      var text = ((p.id || "") + " " + (p.name || "") + " " + (p.description || "")).toLowerCase();
+      if (!p) return "Hardware";
+      var savedMap = getSavedProductCategoryMap();
+      var pid = p.id || p.product_id;
+      if (p.category && String(p.category).trim()) return String(p.category).trim();
+      if (pid && savedMap[pid]) return savedMap[pid];
+
+      var text = ((pid || "") + " " + (p.name || p.title || "") + " " + (p.description || "")).toLowerCase();
       if (text.includes("itv-cmb") || text.includes("combo") || text.includes("package")) return "Combo";
       if (text.includes("itv-dsk") || text.includes("optiplex") || text.includes("desktop") || text.includes("prodesk")) return "Desktop";
       if (text.includes("itv-lap") || text.includes("laptop") || text.includes("thinkpad") || text.includes("latitude") || text.includes("elitebook")) return "Laptop";
@@ -2364,86 +3024,128 @@
       return "Hardware";
     }
 
+    function applyMappedCatalog(rawList) {
+      var deleted = getDeletedLocalIds();
+      return (rawList || []).filter(function(item) {
+        var id = item.id || item.product_id;
+        return !deleted.includes(id);
+      }).map(function(p) {
+        var pid = p.id || p.product_id;
+        var priceNum = p.price !== undefined ? Number(p.price) : Number(p.selling_price || 0);
+        return {
+          id: pid,
+          product_id: pid,
+          name: p.name || p.title,
+          title: p.name || p.title,
+          price: priceNum,
+          selling_price: priceNum,
+          mrp_price: p.mrp_price ? Number(p.mrp_price) : Math.round(priceNum * 1.3),
+          category: inferProductCategory(p),
+          condition: p.condition || "Certified",
+          photos_link: p.photos_link || (p.drive_image_id ? formatDriveImageUrl(p.drive_image_id, 400) : ""),
+          drive_image_id: p.drive_image_id || "",
+          description: p.description || "",
+          specs: p.specs || null,
+          available_pcs: p.available_pcs !== undefined ? Number(p.available_pcs) : (p.stock ? Number(p.stock.total || 0) : 0),
+          stock: p.stock || { total: Number(p.available_pcs || 0) }
+        };
+      });
+    }
+
     /**
-     * Hydrate catalog from Supabase, sessionStorage, or Google Apps Script RPC
+     * Hydrate catalog with 30-min client cache to minimize Supabase API & Log query volume
      */
-    async function initCatalogData() {
-      // 1. Bootstrap server .env Supabase connection and fetch live products
+    async function initCatalogData(forceRefresh = false) {
+      var storeCache = typeof localStorage !== "undefined" ? localStorage : (typeof sessionStorage !== "undefined" ? sessionStorage : null);
+      var searchEl = document.getElementById("catalog-search-input");
+
+      // 1. Serve fresh cached catalog immediately unless forceRefresh is requested
+      if (!forceRefresh) {
+        var cachedRaw = safeStorageGet(storeCache, "ITV_CATALOG_CACHE") || safeStorageGet(typeof sessionStorage !== "undefined" ? sessionStorage : null, "ITV_CATALOG_CACHE");
+        var cachedTs = Number(safeStorageGet(storeCache, "ITV_CATALOG_CACHE_TS") || 0);
+        if (cachedRaw && cachedTs && (Date.now() - cachedTs < CATALOG_CACHE_TTL_MS)) {
+          try {
+            var parsedCache = JSON.parse(cachedRaw);
+            if (Array.isArray(parsedCache) && parsedCache.length > 0) {
+              window.ITVisionState.catalogCache = applyMappedCatalog(parsedCache);
+              executeCatalogSearch(searchEl ? searchEl.value : "");
+              return;
+            }
+          } catch (_) {
+            safeStorageRemove(storeCache, "ITV_CATALOG_CACHE");
+          }
+        }
+      }
+
+      // 2. Skip hammering missing-table 404 logs if PGRST205 was recently seen
+      var missingTs = Number(safeStorageGet(storeCache, "ITV_SUPA_TABLE_MISSING_TS") || 0);
+      var shouldSkipRemote = !forceRefresh && missingTs && (Date.now() - missingTs < TABLE_MISSING_COOLDOWN_MS);
+      if (shouldSkipRemote) {
+        setSchemaMissingBannerVisible(true);
+        fallbackToDefaultCatalog();
+        return;
+      }
+
+      // 3. Query Supabase when cache is stale or explicit Sync requested
       try {
         if (window.ITVisionSupabase && window.ITVisionSupabase.initAsync) {
-          await window.ITVisionSupabase.initAsync();
+          await window.ITVisionSupabase.initAsync(forceRefresh);
         }
         if (window.ITVisionSupabase && window.ITVisionSupabase.fetchProducts) {
           var supaProducts = await window.ITVisionSupabase.fetchProducts();
+          safeStorageRemove(storeCache, "ITV_SUPA_TABLE_MISSING_TS");
+          setSchemaMissingBannerVisible(false);
+
           if (supaProducts && supaProducts.length > 0) {
-            window.ITVisionState.catalogCache = supaProducts.map(function(p) {
-              return {
-                id: p.id,
-                product_id: p.id,
-                name: p.name,
-                title: p.name,
-                price: Number(p.price),
-                selling_price: Number(p.price),
-                mrp_price: Math.round(Number(p.price) * 1.3),
-                category: inferProductCategory(p),
-                condition: "Certified",
-                photos_link: p.photos_link,
-                description: p.description,
-                available_pcs: Number(p.available_pcs),
-                stock: { total: Number(p.available_pcs) }
-              };
-            });
-            sessionStorage.setItem("ITV_CATALOG_CACHE", JSON.stringify(window.ITVisionState.catalogCache));
-            var searchEl = document.getElementById("catalog-search-input");
+            window.ITVisionState.catalogCache = applyMappedCatalog(supaProducts);
+            var serialized = JSON.stringify(window.ITVisionState.catalogCache);
+            safeStorageSet(storeCache, "ITV_CATALOG_CACHE", serialized);
+            safeStorageSet(storeCache, "ITV_CATALOG_CACHE_TS", String(Date.now()));
+            safeStorageSet(typeof sessionStorage !== "undefined" ? sessionStorage : null, "ITV_CATALOG_CACHE", serialized);
             executeCatalogSearch(searchEl ? searchEl.value : "");
             return;
           }
         }
       } catch (supaErr) {
-        console.warn("Supabase fetch notice:", supaErr);
-      }
-
-      // 2. Try sessionStorage cache
-      var cached = sessionStorage.getItem("ITV_CATALOG_CACHE");
-      if (cached) {
-        try {
-          window.ITVisionState.catalogCache = JSON.parse(cached);
-          renderProductGrid(window.ITVisionState.catalogCache);
-          return;
-        } catch (e) {
-          sessionStorage.removeItem("ITV_CATALOG_CACHE");
+        console.warn("Supabase fetch notice:", supaErr && supaErr.message ? supaErr.message : supaErr);
+        if (supaErr && supaErr.tableMissing) {
+          safeStorageSet(storeCache, "ITV_SUPA_TABLE_MISSING_TS", String(Date.now()));
+          setSchemaMissingBannerVisible(true);
         }
       }
 
-      // 3. Check if running in Google Apps Script context
-      if (typeof google !== "undefined" && google.script && google.script.run) {
-        google.script.run
-          .withSuccessHandler(function(response) {
-            if (response && response.success && response.catalog) {
-              window.ITVisionState.catalogCache = response.catalog;
-              sessionStorage.setItem("ITV_CATALOG_CACHE", JSON.stringify(response.catalog));
-              renderProductGrid(response.catalog);
-            } else {
-              fallbackToDefaultCatalog();
-            }
-          })
-          .withFailureHandler(function() {
-            fallbackToDefaultCatalog();
-          })
-          .getProductsCatalog();
-      } else {
-        fallbackToDefaultCatalog();
+      // 4. Fallback to cached or default master catalog
+      var legacyCached = safeStorageGet(storeCache, "ITV_CATALOG_CACHE") || safeStorageGet(typeof sessionStorage !== "undefined" ? sessionStorage : null, "ITV_CATALOG_CACHE");
+      if (legacyCached) {
+        try {
+          window.ITVisionState.catalogCache = applyMappedCatalog(JSON.parse(legacyCached));
+          executeCatalogSearch(searchEl ? searchEl.value : "");
+          return;
+        } catch (e) {
+          safeStorageRemove(storeCache, "ITV_CATALOG_CACHE");
+        }
       }
+
+      fallbackToDefaultCatalog();
     }
 
     function fallbackToDefaultCatalog() {
-      window.ITVisionState.catalogCache = DEFAULT_MASTER_CATALOG;
-      sessionStorage.setItem("ITV_CATALOG_CACHE", JSON.stringify(DEFAULT_MASTER_CATALOG));
-      renderProductGrid(DEFAULT_MASTER_CATALOG);
+      var storeCache = typeof localStorage !== "undefined" ? localStorage : (typeof sessionStorage !== "undefined" ? sessionStorage : null);
+      var filteredDefault = applyMappedCatalog(DEFAULT_MASTER_CATALOG);
+      window.ITVisionState.catalogCache = filteredDefault;
+      safeStorageSet(storeCache, "ITV_CATALOG_CACHE", JSON.stringify(filteredDefault));
+      safeStorageSet(storeCache, "ITV_CATALOG_CACHE_TS", String(Date.now()));
+      safeStorageSet(typeof sessionStorage !== "undefined" ? sessionStorage : null, "ITV_CATALOG_CACHE", JSON.stringify(filteredDefault));
+      var searchEl = document.getElementById("catalog-search-input");
+      if (window.ITVisionState.activeFilters && window.ITVisionState.activeFilters.category !== "ALL") {
+        executeCatalogSearch(searchEl ? searchEl.value : "");
+      } else {
+        renderProductGrid(filteredDefault);
+      }
     }
 
     /**
-     * Render High-Density Product Grid
+     * Render High-Density Product Grid (shows 1 primary thumbnail per card; click opens lightbox arrows)
      */
     function renderProductGrid(items) {
       var grid = document.getElementById("product-grid-container");
@@ -2483,26 +3185,45 @@
         if (p.specs) {
           var keys = Object.keys(p.specs).slice(0, 3);
           for (var k = 0; k < keys.length; k++) {
-            specChipsHtml += `<span class="spec-pill">${p.specs[keys[k]]}</span>`;
+            specChipsHtml += `<span class="spec-pill">${escapeHtml(p.specs[keys[k]])}</span>`;
           }
         } else if (p.description) {
-          specChipsHtml = `<span class="spec-pill" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:220px;">${p.description}</span>`;
+          specChipsHtml = `<span class="spec-pill" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:220px;">${escapeHtml(p.description)}</span>`;
         }
 
-        var imgUrl = p.photos_link ? p.photos_link : formatDriveImageUrl(p.drive_image_id, 300);
+        var mediaList = parseProductMediaList(p.photos_link, p.drive_image_id);
+        var firstMedia = mediaList.length > 0 ? mediaList[0] : { url: formatDriveImageUrl(p.drive_image_id, 300), kind: "image" };
+        var cleanPrimaryUrl = firstMedia.url.replace(/#itv=(video|audio)$/i, "");
+        var primaryThumbInner = "";
+        if (firstMedia.kind === "video") {
+          primaryThumbInner = `
+            <div style="width:100%; height:100%; background:#0F172A; color:#FFFFFF; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;">
+              <span style="font-size:26px;">▶</span>
+              <span style="font-size:10px; font-weight:700;">Product Video (Click to Play)</span>
+            </div>
+            <span class="card-video-badge">▶ Video</span>
+          `;
+        } else {
+          primaryThumbInner = `<img src="${escapeHtml(cleanPrimaryUrl)}" alt="${escapeHtml(ptitle)}" loading="lazy" onerror="this.src='https://via.placeholder.com/300?text=IT+Vision+Media'">`;
+        }
+
+        var mediaCountPill = mediaList.length > 1
+          ? `<span class="card-media-count-badge">📷 ${mediaList.length} Media</span>`
+          : "";
 
         html += `
           <div class="product-card">
             <div>
               <div class="card-badge-row">
-                <span class="condition-badge ${conditionBadgeClass}">${pcondition}</span>
+                <span class="condition-badge ${conditionBadgeClass}">${escapeHtml(pcondition)}</span>
                 <span class="discount-pill">-${discountPct}% OFF</span>
               </div>
-              <div class="card-thumb-wrap">
-                <img src="${imgUrl}" alt="${ptitle}" loading="lazy" onerror="this.src='https://via.placeholder.com/300?text=IT+Vision+Media'">
+              <div class="card-thumb-wrap" onclick="openProductMediaModal('${escapeHtml(pid)}')" title="${mediaList.length > 1 ? 'Click to view all ' + mediaList.length + ' photos/videos' : 'Click to enlarge media'}">
+                ${primaryThumbInner}
+                ${mediaCountPill}
               </div>
-              <div class="card-category-label">${pcategory}</div>
-              <div class="card-product-title" title="${ptitle}">${ptitle}</div>
+              <div class="card-category-label">${escapeHtml(pcategory)}</div>
+              <div class="card-product-title" title="${escapeHtml(ptitle)}">${escapeHtml(ptitle)}</div>
               <div class="card-specs-row">${specChipsHtml}</div>
             </div>
 
@@ -2521,16 +3242,16 @@
               </div>
 
               <div class="bulk-stepper-row">
-                <button class="btn-bulk-step" onclick="quickAdd('${pid}', 1)">+1</button>
-                <button class="btn-bulk-step" onclick="quickAdd('${pid}', 5)">+5</button>
-                <button class="btn-bulk-step" onclick="quickAdd('${pid}', 10)">+10</button>
+                <button class="btn-bulk-step" onclick="quickAdd('${escapeHtml(pid)}', 1)">+1</button>
+                <button class="btn-bulk-step" onclick="quickAdd('${escapeHtml(pid)}', 5)">+5</button>
+                <button class="btn-bulk-step" onclick="quickAdd('${escapeHtml(pid)}', 10)">+10</button>
               </div>
 
               <div class="card-btn-group">
-                <button class="btn-add-cart" onclick="quickAdd('${pid}', 1)">
+                <button class="btn-add-cart" onclick="quickAdd('${escapeHtml(pid)}', 1)">
                   <span>🛒 Add to Cart</span>
                 </button>
-                <button class="btn-wa-inquiry" onclick="openWhatsAppQuote('${pid}', '${encodeURIComponent(ptitle)}')" title="Direct WhatsApp Quote">
+                <button class="btn-wa-inquiry" onclick="openWhatsAppQuote('${escapeHtml(pid)}', '${encodeURIComponent(ptitle)}')" title="Direct WhatsApp Quote">
                   💬
                 </button>
               </div>
@@ -3034,10 +3755,15 @@
     }
 
     /**
-     * Trigger Media Selection (Photos & Videos) for Google Drive Script Upload
+     * Trigger Media Selection (Photos & Videos) for Google Drive Script Upload (Max 4 items per product)
      * Endpoint: https://script.google.com/macros/s/AKfycbxRR30Z9eMtp6WntWzfIB8Bg52jPWXah-b4pDQsFeOR6fn0A6TqTmocbZSVFlE4Ip4noQ/exec
      */
     function triggerUploadMedia() {
+      var list = window.ITVisionMediaFormList || [];
+      if (list.length >= 4) {
+        alert("Maximum 4 media files allowed per product. Remove an item first to upload a replacement.");
+        return;
+      }
       var input = document.getElementById("form-media-file-input");
       if (input) {
         input.value = "";
@@ -3045,65 +3771,171 @@
       }
     }
 
+    function updateFormMediaControlsUI() {
+      var list = window.ITVisionMediaFormList || [];
+      var count = list.length;
+      var badge = document.getElementById("media-count-badge");
+      var uploadBtn = document.getElementById("btn-upload-media");
+      var addBtn = document.getElementById("btn-add-upload-media");
+      var limitBadge = document.getElementById("media-limit-badge");
+      var photoInput = document.getElementById("prod-form-photolink");
+
+      if (badge) badge.innerText = count + " / 4 Media";
+      if (photoInput) photoInput.value = serializeProductMediaList(list);
+
+      if (uploadBtn && uploadBtn.style) uploadBtn.style.display = count === 0 ? "inline-flex" : "none";
+      if (addBtn && addBtn.style) addBtn.style.display = (count >= 1 && count < 4) ? "inline-flex" : "none";
+      if (limitBadge && limitBadge.style) limitBadge.style.display = count >= 4 ? "inline-block" : "none";
+    }
+
+    function renderFormMediaList() {
+      var list = window.ITVisionMediaFormList || [];
+      var previewEl = document.getElementById("form-media-preview");
+      updateFormMediaControlsUI();
+
+      if (!previewEl) return;
+      if (list.length === 0) {
+        if (previewEl.style) previewEl.style.display = "none";
+        previewEl.innerHTML = "";
+        return;
+      }
+
+      if (previewEl.style) previewEl.style.display = "block";
+      var html = `<div style="font-size:10px; font-weight:700; color:#0F4C81; margin-bottom:4px;">Uploaded Media (${list.length} / 4) — First item displays on catalog card thumbnail:</div><div class="form-media-chips-grid">`;
+      for (var i = 0; i < list.length; i++) {
+        var m = list[i];
+        var cleanUrl = m.url.replace(/#itv=(video|audio)$/i, "");
+        var mediaHtml = m.kind === "video"
+          ? `<div style="width:100%; height:64px; background:#0F172A; color:#FFFFFF; display:flex; align-items:center; justify-content:center; border-radius:4px; font-size:11px; font-weight:700;">▶ Video #${i + 1}</div>`
+          : `<img src="${escapeHtml(cleanUrl)}" style="width:100%; height:64px; object-fit:contain; border-radius:4px; background:#F8FAFC;" onerror="this.style.opacity='0.4'">`;
+
+        html += `
+          <div class="form-media-chip">
+            <button type="button" class="form-media-chip-remove" title="Remove media" onclick="removeFormMediaAt(${i})">&times;</button>
+            ${mediaHtml}
+            <span style="font-size:10px; color:#475569; font-weight:700;">#${i + 1} ${i === 0 ? "(Primary)" : (m.kind === "video" ? "Video" : "Photo")}</span>
+          </div>
+        `;
+      }
+      html += `</div>`;
+      previewEl.innerHTML = html;
+    }
+
+    function removeFormMediaAt(idx) {
+      var list = window.ITVisionMediaFormList || [];
+      if (idx >= 0 && idx < list.length) {
+        list.splice(idx, 1);
+      }
+      window.ITVisionMediaFormList = list;
+      renderFormMediaList();
+    }
+
+    function addPastedMediaUrl() {
+      var list = window.ITVisionMediaFormList || [];
+      if (list.length >= 4) {
+        alert("Maximum 4 media items reached.");
+        return;
+      }
+      var photoInput = document.getElementById("prod-form-photolink");
+      if (!photoInput) return;
+      var raw = (photoInput.value || "").trim();
+      if (!raw) return;
+
+      var parsed = parseProductMediaList(raw);
+      if (parsed.length > 1) {
+        window.ITVisionMediaFormList = parsed.slice(0, 4);
+      } else {
+        var detected = autodetectDriveUrl(raw);
+        if (!list.some(function(item) { return item.url === detected; })) {
+          list.push({ url: detected, kind: detectMediaKind(detected) });
+        }
+        window.ITVisionMediaFormList = list.slice(0, 4);
+      }
+      renderFormMediaList();
+    }
+
     async function handleAutoMediaUpload(fileInput) {
       if (!fileInput || !fileInput.files || fileInput.files.length === 0) return;
-      var file = fileInput.files[0];
+      var existing = window.ITVisionMediaFormList || [];
+      var remainingSlots = 4 - existing.length;
+      if (remainingSlots <= 0) {
+        alert("Maximum 4 media items per product reached.");
+        return;
+      }
+
+      var filesToUpload = Array.prototype.slice.call(fileInput.files, 0, remainingSlots);
       var progressWrap = document.getElementById("media-upload-progress-wrap");
       var progressBar = document.getElementById("media-upload-progress-bar");
       var percentEl = document.getElementById("media-upload-percent");
       var statusEl = document.getElementById("form-media-upload-status");
-      var photoInput = document.getElementById("prod-form-photolink");
-      var previewEl = document.getElementById("form-media-preview");
       var uploadBtn = document.getElementById("btn-upload-media");
+      var addBtn = document.getElementById("btn-add-upload-media");
 
-      var detectedKind = file.type && file.type.startsWith("video/") ? "Video" : "Photo";
-
-      // Immediately show upload progress bar upon selection
-      if (progressWrap && progressWrap.style) progressWrap.style.display = "block";
-      if (progressBar && progressBar.style) {
-        progressBar.style.width = "5%";
-        progressBar.style.background = "linear-gradient(90deg, #0F4C81, #16A34A)";
-      }
-      if (percentEl) percentEl.innerText = "5%";
-      if (statusEl) statusEl.innerText = `Uploading ${detectedKind}: "${file.name}"...`;
       if (uploadBtn) uploadBtn.disabled = true;
+      if (addBtn) addBtn.disabled = true;
 
-      var onProgressUpdate = function(pct, label) {
-        if (progressBar && progressBar.style) progressBar.style.width = pct + "%";
-        if (percentEl) percentEl.innerText = pct + "%";
-        if (statusEl && label) statusEl.innerText = label;
-      };
+      for (var fIdx = 0; fIdx < filesToUpload.length; fIdx++) {
+        var file = filesToUpload[fIdx];
+        var detectedKind = file.type && file.type.startsWith("video/") ? "Video" : "Photo";
+        var itemPrefix = filesToUpload.length > 1 ? `(${fIdx + 1}/${filesToUpload.length}) ` : "";
 
-      try {
-        var uploadResult;
-        if (window.ITVisionSupabase && window.ITVisionSupabase.uploadMedia) {
-          uploadResult = await window.ITVisionSupabase.uploadMedia(file, null, onProgressUpdate);
-        } else {
-          uploadResult = await uploadMediaToGoogleDrive(file, null, onProgressUpdate);
-        }
-
-        var mediaUrl = uploadResult.directUrl || uploadResult.fileUrl;
-        if (photoInput) photoInput.value = mediaUrl;
-
-        if (progressBar && progressBar.style) progressBar.style.width = "100%";
-        if (percentEl) percentEl.innerText = "100%";
-        if (statusEl) {
-          statusEl.innerHTML = `<span style="color:var(--color-success-green);">✔ ${detectedKind} uploaded to Google Drive successfully!</span>`;
-        }
-
-        renderMediaPreview(mediaUrl, file.type, previewEl);
-      } catch (err) {
+        if (progressWrap && progressWrap.style) progressWrap.style.display = "block";
         if (progressBar && progressBar.style) {
-          progressBar.style.width = "100%";
-          progressBar.style.background = "#DC2626";
+          progressBar.style.width = "5%";
+          progressBar.style.background = "linear-gradient(90deg, #0F4C81, #16A34A)";
         }
-        if (percentEl) percentEl.innerText = "Failed";
-        if (statusEl) {
-          statusEl.innerHTML = `<span style="color:var(--color-danger-red);">❌ Upload failed: ${err.message}</span>`;
+        if (percentEl) percentEl.innerText = "5%";
+        if (statusEl) statusEl.innerText = `${itemPrefix}Uploading ${detectedKind}: "${file.name}"...`;
+
+        var onProgressUpdate = function(pct, label) {
+          if (progressBar && progressBar.style) progressBar.style.width = pct + "%";
+          if (percentEl) percentEl.innerText = pct + "%";
+          if (statusEl && label) statusEl.innerText = itemPrefix + label;
+        };
+
+        try {
+          var uploadResult;
+          if (window.ITVisionSupabase && window.ITVisionSupabase.uploadMedia) {
+            uploadResult = await window.ITVisionSupabase.uploadMedia(file, null, onProgressUpdate);
+          } else {
+            uploadResult = await uploadMediaToGoogleDrive(file, null, onProgressUpdate);
+          }
+
+          var mediaUrl = uploadResult.directUrl || uploadResult.fileUrl;
+          if (detectedKind === "Video" && mediaUrl && !mediaUrl.includes("#itv=video") && !/\.(mp4|webm|mov)$/i.test(mediaUrl)) {
+            mediaUrl += "#itv=video";
+          }
+
+          window.ITVisionMediaFormList.push({
+            url: mediaUrl,
+            kind: detectedKind === "Video" ? "video" : "image",
+            mimeType: file.type || ""
+          });
+          window.ITVisionMediaFormList = window.ITVisionMediaFormList.slice(0, 4);
+          renderFormMediaList();
+
+          if (progressBar && progressBar.style) progressBar.style.width = "100%";
+          if (percentEl) percentEl.innerText = "100%";
+          if (statusEl) {
+            var moreMsg = window.ITVisionMediaFormList.length < 4
+              ? ` (${window.ITVisionMediaFormList.length}/4 added — click '➕ Add Upload Media' for more)`
+              : " (4/4 Max Media Uploaded)";
+            statusEl.innerHTML = `<span style="color:var(--color-success-green);">✔ ${detectedKind} uploaded to Google Drive!${moreMsg}</span>`;
+          }
+        } catch (err) {
+          if (progressBar && progressBar.style) {
+            progressBar.style.width = "100%";
+            progressBar.style.background = "#DC2626";
+          }
+          if (percentEl) percentEl.innerText = "Failed";
+          if (statusEl) {
+            statusEl.innerHTML = `<span style="color:var(--color-danger-red);">❌ Upload failed: ${escapeHtml(err.message)}</span>`;
+          }
         }
-      } finally {
-        if (uploadBtn) uploadBtn.disabled = false;
       }
+
+      if (uploadBtn) uploadBtn.disabled = false;
+      if (addBtn) addBtn.disabled = false;
     }
 
     /**
@@ -3116,15 +3948,23 @@
       var statusEl = document.getElementById("form-media-upload-status");
       var photoInput = document.getElementById("prod-form-photolink");
 
+      if (str.startsWith("[")) {
+        window.ITVisionMediaFormList = parseProductMediaList(str);
+        renderFormMediaList();
+        return;
+      }
+
       var detectedUrl = autodetectDriveUrl(str);
       if (detectedUrl !== str) {
         photoInput.value = detectedUrl;
         if (statusEl) {
-          statusEl.innerHTML = `<span style="color:var(--color-success-green); font-weight:700;">✔ Autodetected Google Drive File ID &amp; converted to high-speed CDN streaming link!</span>`;
+          statusEl.innerHTML = `<span style="color:var(--color-success-green); font-weight:700;">✔ Autodetected Google Drive File ID &amp; converted to high-speed CDN link! Click "+ Add Link" to keep adding up to 4 items.</span>`;
         }
       }
 
-      renderMediaPreview(photoInput.value, "image/*", previewEl);
+      if ((window.ITVisionMediaFormList || []).length === 0 && detectedUrl) {
+        renderMediaPreview(detectedUrl, detectMediaKind(detectedUrl) === "video" ? "video/mp4" : "image/*", previewEl);
+      }
     }
 
     function autodetectDriveUrl(str) {
@@ -3152,22 +3992,85 @@
     function renderMediaPreview(url, mimeType, previewContainer) {
       if (!previewContainer || !url) return;
       previewContainer.style.display = "block";
+      var cleanUrl = url.replace(/#itv=(video|audio)$/i, "");
 
       if (mimeType && mimeType.startsWith("video/")) {
         previewContainer.innerHTML = `
           <div style="font-size:10px; font-weight:700; color:#0F4C81; margin-bottom:3px;">Autodetected Video Preview:</div>
-          <video src="${url}" controls style="max-height:110px; max-width:100%; border-radius:4px; border:1px solid #CBD5E1;"></video>
+          <video src="${escapeHtml(cleanUrl)}" controls style="max-height:110px; max-width:100%; border-radius:4px; border:1px solid #CBD5E1;"></video>
         `;
       } else if (mimeType && mimeType.startsWith("audio/")) {
         previewContainer.innerHTML = `
           <div style="font-size:10px; font-weight:700; color:#0F4C81; margin-bottom:3px;">Autodetected Audio Preview:</div>
-          <audio src="${url}" controls style="width:100%;"></audio>
+          <audio src="${escapeHtml(cleanUrl)}" controls style="width:100%;"></audio>
         `;
       } else {
         previewContainer.innerHTML = `
           <div style="font-size:10px; font-weight:700; color:#0F4C81; margin-bottom:3px;">Autodetected Photo Preview:</div>
-          <img src="${url}" style="max-height:110px; max-width:140px; object-fit:contain; border-radius:4px; border:1px solid #CBD5E1;" onerror="this.style.display='none'">
+          <img src="${escapeHtml(cleanUrl)}" style="max-height:110px; max-width:140px; object-fit:contain; border-radius:4px; border:1px solid #CBD5E1;" onerror="this.style.display='none'">
         `;
+      }
+    }
+
+    /**
+     * Load Product Info into Admin Form for Editing
+     */
+    function handleEditProduct(productId) {
+      var list = window.ITVisionState.catalogCache || [];
+      var p = list.find(function(item) { return (item.id || item.product_id) === productId; });
+      if (!p) {
+        alert("Could not locate product details for ID: " + productId);
+        return;
+      }
+
+      var idEl = document.getElementById("prod-form-id");
+      var nameEl = document.getElementById("prod-form-name");
+      var priceEl = document.getElementById("prod-form-price");
+      var stockEl = document.getElementById("prod-form-stock");
+      var descEl = document.getElementById("prod-form-description");
+      var catEl = document.getElementById("prod-form-category");
+      var editBanner = document.getElementById("admin-form-edit-banner");
+      var editLabel = document.getElementById("admin-form-edit-label");
+      var submitBtn = document.getElementById("btn-save-product-submit");
+
+      window.ITVisionEditingProductId = productId;
+      if (idEl) {
+        idEl.value = p.id || p.product_id || productId;
+        idEl.readOnly = true;
+        if (idEl.style) idEl.style.background = "#E2E8F0";
+      }
+      if (nameEl) nameEl.value = p.name || p.title || "";
+      if (priceEl) priceEl.value = p.price !== undefined ? p.price : (p.selling_price || 0);
+      if (stockEl) stockEl.value = p.available_pcs !== undefined ? p.available_pcs : (p.stock ? p.stock.total : 0);
+      if (descEl) descEl.value = p.description || (p.specs ? JSON.stringify(p.specs) : "");
+
+      var resolvedCat = inferProductCategory(p);
+      if (catEl) {
+        var foundOpt = false;
+        if (catEl.options) {
+          for (var i = 0; i < catEl.options.length; i++) {
+            if (catEl.options[i].value === resolvedCat) { foundOpt = true; break; }
+          }
+          if (!foundOpt && resolvedCat && typeof document.createElement === "function") {
+            var tmpOpt = document.createElement("option");
+            tmpOpt.value = resolvedCat;
+            tmpOpt.innerText = resolvedCat;
+            catEl.appendChild(tmpOpt);
+          }
+        }
+        catEl.value = resolvedCat;
+      }
+
+      window.ITVisionMediaFormList = parseProductMediaList(p.photos_link, p.drive_image_id).slice(0, 4);
+      renderFormMediaList();
+
+      if (editBanner && editBanner.style) editBanner.style.display = "flex";
+      if (editLabel) editLabel.innerText = `✏️ Editing Product: ${productId} — Modify details or add up to 4 media items`;
+      if (submitBtn) submitBtn.innerText = "💾 Update Product in Supabase";
+
+      var formEl = document.getElementById("admin-product-form");
+      if (formEl && typeof formEl.scrollIntoView === "function") {
+        formEl.scrollIntoView({ behavior: "smooth", block: "start" });
       }
     }
 
@@ -3177,11 +4080,24 @@
     async function handleSaveProductToSupabase(event) {
       if (event) event.preventDefault();
 
+      var photoRaw = document.getElementById("prod-form-photolink").value.trim();
+      var mediaList = window.ITVisionMediaFormList || [];
+      if (mediaList.length === 0 && photoRaw) {
+        var detected = photoRaw.startsWith("[") ? photoRaw : autodetectDriveUrl(photoRaw);
+        photoRaw = detected;
+      } else if (mediaList.length > 0) {
+        photoRaw = serializeProductMediaList(mediaList);
+      }
+
+      var catSelect = document.getElementById("prod-form-category");
+      var chosenCat = catSelect ? (catSelect.value || "Hardware") : "Hardware";
+
       var product = {
         id: document.getElementById("prod-form-id").value.trim(),
         name: document.getElementById("prod-form-name").value.trim(),
         price: parseFloat(document.getElementById("prod-form-price").value),
-        photos_link: document.getElementById("prod-form-photolink").value.trim(),
+        category: chosenCat,
+        photos_link: photoRaw,
         description: document.getElementById("prod-form-description").value.trim(),
         available_pcs: parseInt(document.getElementById("prod-form-stock").value, 10) || 0
       };
@@ -3191,22 +4107,30 @@
         return;
       }
 
+      var storeCache = typeof localStorage !== "undefined" ? localStorage : (typeof sessionStorage !== "undefined" ? sessionStorage : null);
+      safeStorageRemove(storeCache, "ITV_SUPA_TABLE_MISSING_TS");
+      saveProductCategoryMapping(product.id, chosenCat);
+      removeDeletedLocalId(product.id);
+
       var savedToCloud = false;
       try {
         if (window.ITVisionSupabase && window.ITVisionSupabase.saveProduct) {
           await window.ITVisionSupabase.saveProduct(product);
           savedToCloud = true;
+          setSchemaMissingBannerVisible(false);
         }
       } catch (err) {
         console.warn("Supabase cloud save exception:", err.message);
         if (err && err.tableMissing) {
-          alert("⚠ Table 'public.products' does not exist in Supabase yet!\n\nOpen your Supabase SQL Editor, paste supabase_schema.sql, and click Run. Your product is kept in your local session for now.");
+          safeStorageSet(storeCache, "ITV_SUPA_TABLE_MISSING_TS", String(Date.now()));
+          setSchemaMissingBannerVisible(true);
+          alert("⚠ Table 'public.products' does not exist in Supabase yet!\n\nClick '📋 Copy Setup SQL' at the top and Run in Supabase SQL Editor. Your product is kept in your local session for now.");
         } else {
           alert("Notice: " + err.message + "\n\nProduct saved locally in your active session.");
         }
       }
 
-      // Update local catalog cache
+      // Update local catalog cache cleanly
       var catalog = window.ITVisionState.catalogCache || [];
       var idx = catalog.findIndex(p => (p.id || p.product_id) === product.id);
       var mapped = {
@@ -3217,7 +4141,7 @@
         price: product.price,
         selling_price: product.price,
         mrp_price: Math.round(product.price * 1.35),
-        category: inferProductCategory(product),
+        category: chosenCat,
         condition: "Certified",
         photos_link: product.photos_link,
         description: product.description,
@@ -3232,58 +4156,118 @@
       }
 
       window.ITVisionState.catalogCache = catalog;
-      sessionStorage.setItem("ITV_CATALOG_CACHE", JSON.stringify(catalog));
+      var serialized = JSON.stringify(catalog);
+      safeStorageSet(storeCache, "ITV_CATALOG_CACHE", serialized);
+      safeStorageSet(storeCache, "ITV_CATALOG_CACHE_TS", String(Date.now()));
+      safeStorageSet(typeof sessionStorage !== "undefined" ? sessionStorage : null, "ITV_CATALOG_CACHE", serialized);
 
+      var wasEditing = Boolean(window.ITVisionEditingProductId);
       if (savedToCloud) {
-        alert(`✔ Product "${product.name}" saved to Supabase (mztnzrpfpszfieooeprj) successfully!`);
+        alert(`✔ Product "${product.name}" ${wasEditing ? "updated" : "saved"} to Supabase (mztnzrpfpszfieooeprj) successfully!`);
       }
       resetProductForm();
-      refreshSupabaseProductsTable();
-      renderProductGrid(catalog);
+      refreshSupabaseProductsTable(false);
+      var searchEl = document.getElementById("catalog-search-input");
+      executeCatalogSearch(searchEl ? searchEl.value : "");
     }
 
-    async function refreshSupabaseProductsTable() {
+    async function refreshSupabaseProductsTable(forceSync = false) {
       var tbody = document.getElementById("admin-supabase-products-tbody");
       if (!tbody) return;
 
+      var storeCache = typeof localStorage !== "undefined" ? localStorage : (typeof sessionStorage !== "undefined" ? sessionStorage : null);
       var products = [];
-      try {
-        if (window.ITVisionSupabase && window.ITVisionSupabase.fetchProducts) {
-          var res = await window.ITVisionSupabase.fetchProducts();
-          if (res && res.length > 0) products = res;
+
+      if (forceSync) {
+        safeStorageRemove(storeCache, "ITV_SUPA_TABLE_MISSING_TS");
+      }
+
+      var missingTs = Number(safeStorageGet(storeCache, "ITV_SUPA_TABLE_MISSING_TS") || 0);
+      var shouldSkipRemote = !forceSync && missingTs && (Date.now() - missingTs < TABLE_MISSING_COOLDOWN_MS);
+      var cacheFreshTs = Number(safeStorageGet(storeCache, "ITV_CATALOG_CACHE_TS") || 0);
+      var hasFreshCatalog = !forceSync && (window.ITVisionState.catalogCache || []).length > 0 && cacheFreshTs && (Date.now() - cacheFreshTs < CATALOG_CACHE_TTL_MS);
+
+      if (!shouldSkipRemote && (!hasFreshCatalog || forceSync)) {
+        try {
+          if (window.ITVisionSupabase && window.ITVisionSupabase.fetchProducts) {
+            var res = await window.ITVisionSupabase.fetchProducts();
+            setSchemaMissingBannerVisible(false);
+            if (res && res.length > 0) {
+              products = applyMappedCatalog(res);
+              window.ITVisionState.catalogCache = products;
+              var serialized = JSON.stringify(products);
+              safeStorageSet(storeCache, "ITV_CATALOG_CACHE", serialized);
+              safeStorageSet(storeCache, "ITV_CATALOG_CACHE_TS", String(Date.now()));
+              safeStorageSet(typeof sessionStorage !== "undefined" ? sessionStorage : null, "ITV_CATALOG_CACHE", serialized);
+            }
+          }
+        } catch (e) {
+          console.warn("Could not fetch from live Supabase, using local catalog:", e && e.message);
+          if (e && e.tableMissing) {
+            safeStorageSet(storeCache, "ITV_SUPA_TABLE_MISSING_TS", String(Date.now()));
+            setSchemaMissingBannerVisible(true);
+          }
         }
-      } catch (e) {
-        console.warn("Could not fetch from live Supabase, using local catalog.");
+      } else if (shouldSkipRemote) {
+        setSchemaMissingBannerVisible(true);
       }
 
       if (products.length === 0) {
-        products = (window.ITVisionState.catalogCache || DEFAULT_MASTER_CATALOG).map(function(p) {
+        var sourceList = (window.ITVisionState.catalogCache && window.ITVisionState.catalogCache.length > 0)
+          ? window.ITVisionState.catalogCache
+          : applyMappedCatalog(DEFAULT_MASTER_CATALOG);
+        products = sourceList.map(function(p) {
           return {
             id: p.id || p.product_id,
             name: p.name || p.title,
+            category: inferProductCategory(p),
             price: p.price !== undefined ? p.price : p.selling_price,
             photos_link: p.photos_link || (p.drive_image_id ? formatDriveImageUrl(p.drive_image_id, 80) : ""),
+            drive_image_id: p.drive_image_id || "",
             description: p.description || (p.specs ? JSON.stringify(p.specs) : ""),
             available_pcs: p.available_pcs !== undefined ? p.available_pcs : (p.stock ? p.stock.total : 10)
           };
         });
       }
 
+      if (products.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:18px; color:var(--color-text-muted);">No products in catalog yet. Add a product above!</td></tr>';
+        return;
+      }
+
       var rows = "";
       for (var i = 0; i < products.length; i++) {
         var p = products[i];
-        var thumb = p.photos_link ? `<img src="${p.photos_link}" style="width:40px; height:40px; object-fit:contain; border-radius:4px; border:1px solid #CBD5E1;">` : `<span style="font-size:10px; color:#94A3B8;">No Photo</span>`;
+        var mList = parseProductMediaList(p.photos_link, p.drive_image_id);
+        var thumbHtml = `<span style="font-size:10px; color:#94A3B8;">No Media</span>`;
+        if (mList.length > 0) {
+          var firstM = mList[0];
+          var cleanT = firstM.url.replace(/#itv=(video|audio)$/i, "");
+          var countTag = mList.length > 1 ? `<div style="font-size:9px; color:#0F4C81; font-weight:700;">+${mList.length - 1} more</div>` : "";
+          thumbHtml = firstM.kind === "video"
+            ? `<div style="width:40px; height:40px; background:#0F172A; color:#FFF; border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700;">▶</div>${countTag}`
+            : `<img src="${escapeHtml(cleanT)}" style="width:40px; height:40px; object-fit:contain; border-radius:4px; border:1px solid #CBD5E1;">${countTag}`;
+        }
+
+        var catLabel = escapeHtml(p.category || inferProductCategory(p));
+        var safeId = escapeHtml(p.id);
 
         rows += `
           <tr>
-            <td><code>${p.id}</code></td>
-            <td>${thumb}</td>
-            <td><strong>${p.name}</strong></td>
+            <td><code>${safeId}</code></td>
+            <td>${thumbHtml}</td>
+            <td>
+              <strong>${escapeHtml(p.name)}</strong>
+              <div style="margin-top:2px;"><span style="font-size:10px; background:#EFF6FF; color:#1E40AF; padding:1px 6px; border-radius:999px; font-weight:700;">${catLabel}</span></div>
+            </td>
             <td class="tabular">₹${Number(p.price).toLocaleString('en-IN')}</td>
-            <td><span style="font-size:11px; color:var(--color-text-secondary); line-height:1.3; display:block; max-height:40px; overflow:hidden;">${p.description}</span></td>
+            <td><span style="font-size:11px; color:var(--color-text-secondary); line-height:1.3; display:block; max-height:40px; overflow:hidden;">${escapeHtml(p.description)}</span></td>
             <td class="tabular" style="font-weight:700; text-align:center;">${p.available_pcs}</td>
             <td>
-              <button class="btn-bulk-step" style="color:var(--color-danger-red); border-color:#FCA5A5;" onclick="handleDeleteProduct('${p.id}')">&times; Del</button>
+              <div style="display:flex; gap:4px; flex-wrap:wrap;">
+                <button type="button" class="btn-bulk-step" style="color:var(--color-primary-navy); border-color:#93C5FD; font-weight:700;" onclick="handleEditProduct('${safeId}')">✏️ Edit</button>
+                <button type="button" class="btn-bulk-step" style="color:var(--color-danger-red); border-color:#FCA5A5;" onclick="handleDeleteProduct('${safeId}')">&times; Del</button>
+              </div>
             </td>
           </tr>
         `;
@@ -3293,35 +4277,72 @@
     }
 
     async function handleDeleteProduct(productId) {
-      if (!confirm(`Are you sure you want to remove product ${productId} from Supabase?`)) {
+      if (!confirm(`Are you sure you want to remove product ${productId}?`)) {
         return;
       }
+
+      var storeCache = typeof localStorage !== "undefined" ? localStorage : (typeof sessionStorage !== "undefined" ? sessionStorage : null);
+      var cloudDeleted = false;
+      var tableMissingNote = false;
 
       try {
         if (window.ITVisionSupabase && window.ITVisionSupabase.deleteProduct) {
           await window.ITVisionSupabase.deleteProduct(productId);
+          cloudDeleted = true;
         }
-
-        var catalog = (window.ITVisionState.catalogCache || []).filter(p => (p.id || p.product_id) !== productId);
-        window.ITVisionState.catalogCache = catalog;
-        sessionStorage.setItem("ITV_CATALOG_CACHE", JSON.stringify(catalog));
-
-        refreshSupabaseProductsTable();
-        renderProductGrid(catalog);
-        alert(`Product ${productId} deleted.`);
       } catch (err) {
-        alert("Delete failed: " + err.message);
+        var msg = String((err && err.message) || "");
+        if ((err && err.tableMissing) || msg.includes("schema cache") || msg.includes("PGRST205") || msg.includes("public.products")) {
+          tableMissingNote = true;
+          safeStorageSet(storeCache, "ITV_SUPA_TABLE_MISSING_TS", String(Date.now()));
+          setSchemaMissingBannerVisible(true);
+        } else {
+          alert("Delete failed: " + msg);
+          return;
+        }
+      }
+
+      addDeletedLocalId(productId);
+      var catalog = (window.ITVisionState.catalogCache || []).filter(p => (p.id || p.product_id) !== productId);
+      window.ITVisionState.catalogCache = catalog;
+      var serialized = JSON.stringify(catalog);
+      safeStorageSet(storeCache, "ITV_CATALOG_CACHE", serialized);
+      safeStorageSet(storeCache, "ITV_CATALOG_CACHE_TS", String(Date.now()));
+      safeStorageSet(typeof sessionStorage !== "undefined" ? sessionStorage : null, "ITV_CATALOG_CACHE", serialized);
+
+      if (window.ITVisionEditingProductId === productId) {
+        resetProductForm();
+      }
+
+      refreshSupabaseProductsTable(false);
+      var searchEl = document.getElementById("catalog-search-input");
+      executeCatalogSearch(searchEl ? searchEl.value : "");
+
+      if (tableMissingNote) {
+        alert(`✔ Product "${productId}" removed from your active catalog.\n\nNote: Table 'public.products' does not exist in Supabase yet (PGRST205). Run supabase_schema.sql in Supabase SQL Editor (use '📋 Copy Setup SQL') to sync deletes to Supabase cloud.`);
+      } else if (cloudDeleted) {
+        alert(`✔ Product "${productId}" deleted from Supabase & catalog.`);
       }
     }
 
     function resetProductForm() {
       var form = document.getElementById("admin-product-form");
-      if (form) form.reset();
-      var preview = document.getElementById("form-media-preview");
-      if (preview && preview.style) {
-        preview.innerHTML = "";
-        preview.style.display = "none";
+      if (form && typeof form.reset === "function") form.reset();
+      window.ITVisionEditingProductId = null;
+      window.ITVisionMediaFormList = [];
+
+      var idEl = document.getElementById("prod-form-id");
+      if (idEl) {
+        idEl.readOnly = false;
+        if (idEl.style) idEl.style.background = "";
       }
+      var editBanner = document.getElementById("admin-form-edit-banner");
+      if (editBanner && editBanner.style) editBanner.style.display = "none";
+      var submitBtn = document.getElementById("btn-save-product-submit");
+      if (submitBtn) submitBtn.innerText = "💾 Save Product to Supabase";
+
+      renderFormMediaList();
+
       var fileInput = document.getElementById("form-media-file-input");
       if (fileInput) fileInput.value = "";
       var progressWrap = document.getElementById("media-upload-progress-wrap");
@@ -3490,6 +4511,8 @@
         pageKey = "peripherals";
       } else if (clean === "repairs" || clean === "repair" || clean === "repair-center" || clean === "service-hub") {
         pageKey = "repairs";
+      } else if (clean && PAGE_CONFIGS[clean]) {
+        pageKey = clean;
       } else {
         pageKey = "hardware";
       }

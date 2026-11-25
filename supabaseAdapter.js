@@ -37,18 +37,44 @@ function isServerHostedEnvironment() {
   return true;
 }
 
+const SUPABASE_CONFIG_CACHE_KEY = "ITV_SUPA_CONFIG_CACHE";
+const SUPABASE_CONFIG_CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes to minimize serverless + Postgres hits
+
 /**
- * Asynchronously bootstrap Supabase connection from server `.env` (safe public config + proxy)
+ * Asynchronously bootstrap Supabase connection from server `.env` (cached in sessionStorage to avoid redundant calls)
  */
-async function initSupabaseAsync() {
-  if (serverConfigLoaded) {
+async function initSupabaseAsync(forceRefresh = false) {
+  if (serverConfigLoaded && !forceRefresh) {
     return {
       connected: serverBackendAvailable || !!supabaseClient,
       mode: serverBackendAvailable ? "server_env" : (supabaseClient ? "client_key" : "disconnected")
     };
   }
 
-  if (serverInitPromise) return serverInitPromise;
+  if (!forceRefresh && typeof sessionStorage !== "undefined") {
+    try {
+      const raw = sessionStorage.getItem(SUPABASE_CONFIG_CACHE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.ts && (Date.now() - parsed.ts < SUPABASE_CONFIG_CACHE_TTL_MS) && parsed.cfg) {
+          const cfg = parsed.cfg;
+          if (cfg.connected && cfg.mode === "server_env") {
+            serverBackendAvailable = true;
+            if (cfg.url) IT_VISION_CONFIG.SUPABASE_URL = cfg.url;
+            if (cfg.projectId) IT_VISION_CONFIG.SUPABASE_PROJECT_ID = cfg.projectId;
+            if (cfg.publishableKey) {
+              IT_VISION_CONFIG.SUPABASE_ANON_KEY = cfg.publishableKey;
+              initSupabase(cfg.publishableKey);
+            }
+            serverConfigLoaded = true;
+            return { connected: true, mode: "server_env" };
+          }
+        }
+      }
+    } catch (_) {}
+  }
+
+  if (serverInitPromise && !forceRefresh) return serverInitPromise;
 
   serverInitPromise = (async () => {
     if (isServerHostedEnvironment()) {
@@ -64,6 +90,11 @@ async function initSupabaseAsync() {
             if (cfg.publishableKey) {
               IT_VISION_CONFIG.SUPABASE_ANON_KEY = cfg.publishableKey;
               initSupabase(cfg.publishableKey);
+            }
+            if (typeof sessionStorage !== "undefined") {
+              try {
+                sessionStorage.setItem(SUPABASE_CONFIG_CACHE_KEY, JSON.stringify({ ts: Date.now(), cfg }));
+              } catch (_) {}
             }
           }
         }
@@ -129,7 +160,11 @@ function clearSupabaseAnonKey() {
   IT_VISION_CONFIG.SUPABASE_ANON_KEY = "";
   supabaseClient = null;
   if (typeof localStorage !== "undefined") {
-    localStorage.removeItem("ITV_SUPABASE_ANON_KEY");
+    if (typeof localStorage.removeItem === "function") {
+      localStorage.removeItem("ITV_SUPABASE_ANON_KEY");
+    } else if (typeof localStorage.setItem === "function") {
+      localStorage.setItem("ITV_SUPABASE_ANON_KEY", "");
+    }
   }
 }
 
@@ -452,6 +487,18 @@ async function uploadMediaToGoogleDrive(file, onStatusUpdate, onProgress) {
  * Supabase Products Operations (Only Table in Database)
  */
 
+function isMissingTableErr(errObj) {
+  if (!errObj) return false;
+  const msg = String(errObj.message || errObj.error || "");
+  return errObj.code === "PGRST205" || Boolean(errObj.tableMissing) || msg.includes("schema cache") || msg.includes("public.products");
+}
+
+function isMissingCategoryColErr(errObj) {
+  if (!errObj) return false;
+  const msg = String(errObj.message || errObj.error || "");
+  return (errObj.code === "PGRST204" || errObj.code === "42703") && msg.includes("category");
+}
+
 /**
  * Fetch all products from Supabase (prefers server `.env` proxy when available)
  */
@@ -467,9 +514,14 @@ async function fetchSupabaseProducts() {
       }
       if (data && data.tableMissing) {
         console.warn("Supabase notice:", data.error);
+        const err = new Error(data.error || "Table 'public.products' missing");
+        err.tableMissing = true;
+        err.code = data.code || "PGRST205";
+        throw err;
       }
       return null;
     } catch (err) {
+      if (err && err.tableMissing) throw err;
       console.warn("Server Supabase proxy fetch exception:", err);
       return null;
     }
@@ -479,17 +531,33 @@ async function fetchSupabaseProducts() {
   if (!supabaseClient) return null;
 
   try {
-    const { data, error } = await supabaseClient
+    let { data, error } = await supabaseClient
       .from('products')
-      .select('id, name, price, photos_link, description, available_pcs')
+      .select('id, name, price, photos_link, description, available_pcs, category')
       .order('price', { ascending: false });
+
+    if (error && isMissingCategoryColErr(error)) {
+      const fallback = await supabaseClient
+        .from('products')
+        .select('id, name, price, photos_link, description, available_pcs')
+        .order('price', { ascending: false });
+      data = fallback.data;
+      error = fallback.error;
+    }
 
     if (error) {
       console.warn("Supabase fetch error:", error);
+      if (isMissingTableErr(error)) {
+        const err = new Error(error.message || "Table 'public.products' does not exist in Supabase yet.");
+        err.tableMissing = true;
+        err.code = error.code || "PGRST205";
+        throw err;
+      }
       return null;
     }
     return data;
   } catch (err) {
+    if (err && err.tableMissing) throw err;
     console.warn("Supabase fetch exception:", err);
     return null;
   }
@@ -497,7 +565,7 @@ async function fetchSupabaseProducts() {
 
 /**
  * Insert or Update Product in Supabase
- * @param {Object} product - { id, name, price, photos_link, description, available_pcs }
+ * @param {Object} product - { id, name, price, category, photos_link, description, available_pcs }
  */
 async function saveSupabaseProduct(product) {
   await initSupabaseAsync();
@@ -511,6 +579,9 @@ async function saveSupabaseProduct(product) {
     available_pcs: Number(product.available_pcs || 0),
     updated_at: new Date().toISOString()
   };
+  if (product.category) {
+    payload.category = String(product.category).trim();
+  }
 
   if (serverBackendAvailable) {
     const res = await fetch("/api/supabase/products", {
@@ -521,7 +592,7 @@ async function saveSupabaseProduct(product) {
     const resJson = await res.json();
     if (!res.ok || !resJson.success) {
       const err = new Error(resJson.error || `Supabase save failed (HTTP ${res.status})`);
-      err.tableMissing = Boolean(resJson.tableMissing);
+      err.tableMissing = Boolean(resJson.tableMissing || isMissingTableErr(resJson));
       err.code = resJson.code || null;
       throw err;
     }
@@ -534,15 +605,26 @@ async function saveSupabaseProduct(product) {
     throw new Error("Supabase SDK failed to initialize with project publishable key.");
   }
 
-  const { data, error } = await supabaseClient
+  let { data, error } = await supabaseClient
     .from('products')
     .upsert(payload, { onConflict: 'id' })
     .select();
 
+  if (error && isMissingCategoryColErr(error)) {
+    const sdkFallback = { ...payload };
+    delete sdkFallback.category;
+    const retry = await supabaseClient
+      .from('products')
+      .upsert(sdkFallback, { onConflict: 'id' })
+      .select();
+    data = retry.data;
+    error = retry.error;
+  }
+
   if (error) {
     const wrapped = new Error(error.message || "Supabase upsert error");
     wrapped.code = error.code;
-    wrapped.tableMissing = error.code === "PGRST205" || (error.message && error.message.includes("schema cache"));
+    wrapped.tableMissing = isMissingTableErr(error);
     throw wrapped;
   }
   return data;
@@ -560,7 +642,10 @@ async function deleteSupabaseProduct(productId) {
     });
     const resJson = await res.json();
     if (!res.ok || !resJson.success) {
-      throw new Error(resJson.error || `Delete failed (HTTP ${res.status})`);
+      const err = new Error(resJson.error || `Delete failed (HTTP ${res.status})`);
+      err.tableMissing = Boolean(resJson.tableMissing || isMissingTableErr(resJson));
+      err.code = resJson.code || null;
+      throw err;
     }
     return resJson.data;
   }
@@ -575,7 +660,10 @@ async function deleteSupabaseProduct(productId) {
     .select();
 
   if (error) {
-    throw error;
+    const wrapped = new Error(error.message || "Delete failed");
+    wrapped.code = error.code;
+    wrapped.tableMissing = isMissingTableErr(error);
+    throw wrapped;
   }
   return data;
 }

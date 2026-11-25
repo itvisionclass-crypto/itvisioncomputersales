@@ -13,18 +13,28 @@ function getSupabaseEnv() {
   return { url, publishableKey, secretKey, jwksUrl, projectId };
 }
 
-function jsonResponse(statusCode, bodyObj) {
+function jsonResponse(statusCode, bodyObj, cacheControl = 'no-store') {
   return {
     statusCode,
     headers: {
       'Content-Type': 'application/json',
-      'Cache-Control': 'no-store',
+      'Cache-Control': cacheControl,
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization'
     },
     body: JSON.stringify(bodyObj)
   };
+}
+
+function isMissingTableResponse(res) {
+  const data = res && res.data;
+  return Boolean(data && (data.code === 'PGRST205' || (typeof data.message === 'string' && data.message.includes('schema cache'))));
+}
+
+function isMissingCategoryCol(res) {
+  const data = res && res.data;
+  return Boolean(data && (data.code === 'PGRST204' || data.code === '42703') && typeof data.message === 'string' && data.message.includes('category'));
 }
 
 function supabaseRestRequest({ method, restPath, bodyObj = null, useSecret = true, prefer = null }) {
@@ -97,10 +107,10 @@ exports.handler = async function (event) {
       publishableKey: cfg.publishableKey,
       hasSecretKey: Boolean(cfg.secretKey),
       hasJwksUrl: Boolean(cfg.jwksUrl)
-    });
+    }, 'public, max-age=300');
   }
 
-  // Health Check Endpoint
+  // Health Check Endpoint (single lightweight table probe — no OpenAPI root schema query)
   if (reqPath.endsWith('/health') && method === 'GET') {
     if (!cfg.url || (!cfg.secretKey && !cfg.publishableKey)) {
       return jsonResponse(200, {
@@ -113,15 +123,14 @@ exports.handler = async function (event) {
     }
 
     try {
-      const rootRes = await supabaseRestRequest({ method: 'GET', restPath: '/', useSecret: true });
-      const authValid = rootRes.statusCode >= 200 && rootRes.statusCode < 300;
       const tblRes = await supabaseRestRequest({
         method: 'GET',
         restPath: '/products?select=id&limit=1',
         useSecret: true
       });
       const tableExists = tblRes.statusCode >= 200 && tblRes.statusCode < 300;
-      const tableMissing = !tableExists && tblRes.data && tblRes.data.code === 'PGRST205';
+      const tableMissing = !tableExists && isMissingTableResponse(tblRes);
+      const authValid = tableExists || tableMissing || (tblRes.statusCode !== 401 && tblRes.statusCode !== 403 && tblRes.statusCode < 500);
 
       return jsonResponse(200, {
         success: authValid && tableExists,
@@ -144,23 +153,32 @@ exports.handler = async function (event) {
   if (reqPath.endsWith('/products')) {
     try {
       if (method === 'GET') {
-        const supaRes = await supabaseRestRequest({
+        let supaRes = await supabaseRestRequest({
           method: 'GET',
-          restPath: '/products?select=id,name,price,photos_link,description,available_pcs&order=price.desc',
+          restPath: '/products?select=id,name,price,photos_link,description,available_pcs,category&order=price.desc',
           useSecret: true
         });
+        if (isMissingCategoryCol(supaRes)) {
+          supaRes = await supabaseRestRequest({
+            method: 'GET',
+            restPath: '/products?select=id,name,price,photos_link,description,available_pcs&order=price.desc',
+            useSecret: true
+          });
+        }
         if (supaRes.statusCode >= 200 && supaRes.statusCode < 300) {
           return jsonResponse(200, {
             success: true,
             products: Array.isArray(supaRes.data) ? supaRes.data : []
           });
         }
-        const tableMissing = supaRes.data && supaRes.data.code === 'PGRST205';
+        const tableMissing = isMissingTableResponse(supaRes);
         return jsonResponse(supaRes.statusCode || 502, {
           success: false,
           tableMissing,
           code: supaRes.data && supaRes.data.code,
-          error: (supaRes.data && supaRes.data.message) || 'Failed to fetch products from Supabase.'
+          error: tableMissing
+            ? "Table 'public.products' does not exist in Supabase yet. Run supabase_schema.sql in Supabase SQL Editor."
+            : (supaRes.data && supaRes.data.message) || 'Failed to fetch products from Supabase.'
         });
       }
 
@@ -182,19 +200,32 @@ exports.handler = async function (event) {
           available_pcs: parseInt(product.available_pcs, 10) || 0,
           updated_at: new Date().toISOString()
         };
+        if (product.category) {
+          payload.category = String(product.category).trim();
+        }
 
-        const supaRes = await supabaseRestRequest({
+        let supaRes = await supabaseRestRequest({
           method: 'POST',
           restPath: '/products?on_conflict=id',
           bodyObj: payload,
           useSecret: true,
           prefer: 'resolution=merge-duplicates,return=representation'
         });
+        if (isMissingCategoryCol(supaRes)) {
+          delete payload.category;
+          supaRes = await supabaseRestRequest({
+            method: 'POST',
+            restPath: '/products?on_conflict=id',
+            bodyObj: payload,
+            useSecret: true,
+            prefer: 'resolution=merge-duplicates,return=representation'
+          });
+        }
 
         if (supaRes.statusCode >= 200 && supaRes.statusCode < 300) {
           return jsonResponse(200, { success: true, data: supaRes.data });
         }
-        const tableMissing = supaRes.data && supaRes.data.code === 'PGRST205';
+        const tableMissing = isMissingTableResponse(supaRes);
         return jsonResponse(supaRes.statusCode || 502, {
           success: false,
           tableMissing,
@@ -227,9 +258,14 @@ exports.handler = async function (event) {
         if (supaRes.statusCode >= 200 && supaRes.statusCode < 300) {
           return jsonResponse(200, { success: true, data: supaRes.data });
         }
+        const tableMissing = isMissingTableResponse(supaRes);
         return jsonResponse(supaRes.statusCode || 502, {
           success: false,
-          error: (supaRes.data && supaRes.data.message) || 'Failed to delete product from Supabase.'
+          tableMissing,
+          code: supaRes.data && supaRes.data.code,
+          error: tableMissing
+            ? "Table 'public.products' does not exist in Supabase yet. Run supabase_schema.sql in Supabase SQL Editor."
+            : (supaRes.data && supaRes.data.message) || 'Failed to delete product from Supabase.'
         });
       }
 

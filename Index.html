@@ -1945,25 +1945,50 @@
 
             <!-- Integrated Photos / Media Link with Google Drive Upload & Autodetect -->
             <div class="form-group-sm" style="grid-column:1 / -1; background:#FFFFFF; border:1px solid var(--color-border-hairline); border-radius:6px; padding:12px;">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
                 <label style="font-weight:700; color:var(--color-primary-navy);">
-                  📁 Photos / Media Link (Google Drive URL) &bull; <span style="color:var(--color-success-green);">Autodetect Enabled</span>
+                  📁 Photos / Media Link (Google Drive Folder: <code>1E2MflyKllRq2a5kiZmFargIe5PvA8_X6</code>)
                 </label>
-                <span style="font-size:10px; color:#64748B;">Supported: Images, Videos, Audio files</span>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span id="drive-status-badge" style="font-size:10px; font-weight:700; padding:2px 8px; border-radius:4px; background:#F1F5F9; color:#475569;">⏳ Checking Drive Script...</span>
+                  <button type="button" class="btn-bulk-step" style="font-size:10px; padding:3px 8px; height:auto;" onclick="checkAndRenderDriveStatus()">🔄 Test Drive</button>
+                </div>
+              </div>
+
+              <!-- Actionable Banner when Apps Script doPost(e) is not yet deployed -->
+              <div id="drive-script-warning" style="display:none; margin-bottom:10px; padding:10px 12px; background:#FEF2F2; border:1px solid #FCA5A5; border-radius:6px; font-size:11px; color:#991B1B; line-height:1.45;">
+                <div style="font-weight:800; margin-bottom:4px;">❌ Google Apps Script is missing <code>doPost(e)</code> (uploads cannot save to Google Drive until deployed)</div>
+                <div style="margin-bottom:8px;">
+                  Your script at <code>script.google.com</code> currently only has <code>doGet</code> + <code>uploadPhoto</code>. Paste the updated script and deploy a <strong>New version</strong>:
+                </div>
+                <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                  <button type="button" class="btn-bulk-step" style="background:#DC2626; color:#FFFFFF; border:none; padding:5px 12px; height:auto; cursor:pointer;" onclick="copyDriveAppsScriptCode()">
+                    📋 Copy Drive Upload Script
+                  </button>
+                  <a href="https://script.google.com" target="_blank" rel="noopener noreferrer" class="btn-bulk-step" style="background:#FFFFFF; color:#0F4C81; border:1px solid #CBD5E1; padding:5px 12px; height:auto; text-decoration:none;">
+                    🔗 Open Apps Script Editor &rarr;
+                  </a>
+                  <button type="button" id="btn-retry-drive-upload" class="btn-bulk-step" style="display:none; background:#16A34A; color:#FFFFFF; border:none; padding:5px 12px; height:auto; cursor:pointer;" onclick="retryPendingDriveUpload()">
+                    ☁ Retry Push to Google Drive
+                  </button>
+                </div>
+                <div style="margin-top:6px; font-size:10px; color:#7F1D1D;">
+                  In Apps Script: <strong>Deploy</strong> &rarr; <strong>Manage deployments</strong> &rarr; Edit (Pencil) &rarr; Version: <strong>New version</strong> &rarr; Who has access: <strong>Anyone</strong> &rarr; <strong>Deploy</strong>.
+                </div>
               </div>
 
               <!-- Upload Directly to Drive Script -->
               <div style="display:flex; gap:10px; align-items:center; margin-bottom:8px; flex-wrap:wrap;">
                 <input type="file" id="form-media-file-input" accept="image/*,video/*,audio/*" class="form-ctrl-sm" style="flex:1; min-width:220px; height:auto; padding:5px;" onchange="handleAutoMediaUpload(this)">
-                <span style="font-size:11px; color:#64748B; font-weight:600;">OR Paste Link Below</span>
+                <span style="font-size:11px; color:#64748B; font-weight:600;">OR Paste Drive Link Below</span>
               </div>
 
               <!-- Direct URL Input with Automatic Normalization on Paste/Input -->
-              <input type="url" id="prod-form-photolink" class="form-ctrl-sm" placeholder="https://lh3.googleusercontent.com/d/... (Auto-detected upon file selection or link paste)" oninput="handleAutoDetectLink(this.value)" required>
+              <input type="url" id="prod-form-photolink" class="form-ctrl-sm" placeholder="https://lh3.googleusercontent.com/d/... (Auto-filled after Google Drive upload)" oninput="handleAutoDetectLink(this.value)" required>
 
               <!-- Progress & Autodetect Feedback -->
               <div id="form-media-upload-status" style="font-size:11px; font-weight:600; color:var(--color-text-secondary); margin-top:4px;">
-                Select photo/video/audio to automatically upload to Google Drive, or paste any Drive link.
+                Select photo/video/audio to upload directly to Google Drive folder <code>1E2MflyKllRq2a5kiZmFargIe5PvA8_X6</code>.
               </div>
 
               <!-- Live Media Preview -->
@@ -3067,11 +3092,110 @@
         `;
       }
 
-      // Update Supabase connection status badge
+      // Update Supabase & Google Drive connection status badges
       updateSupabaseStatusUI();
+      checkAndRenderDriveStatus();
 
       // Hydrate Supabase Products Table
       refreshSupabaseProductsTable();
+    }
+
+    var pendingLocalDriveBackup = null;
+
+    async function checkAndRenderDriveStatus() {
+      var badge = document.getElementById("drive-status-badge");
+      var warnBox = document.getElementById("drive-script-warning");
+      if (badge) badge.innerText = "⏳ Testing Drive...";
+
+      if (!window.ITVisionSupabase || typeof window.ITVisionSupabase.checkDriveHealth !== "function") {
+        return;
+      }
+
+      try {
+        var health = await window.ITVisionSupabase.checkDriveHealth();
+        if (health && health.connected) {
+          if (badge) {
+            badge.innerText = "🟢 Drive Ready (doPost Active)";
+            if (badge.style) {
+              badge.style.background = "#DCFCE7";
+              badge.style.color = "#15803D";
+            }
+          }
+          if (warnBox && warnBox.style) warnBox.style.display = "none";
+        } else if (health && health.doPostMissing) {
+          if (badge) {
+            badge.innerText = "🔴 doPost Missing (Setup Needed)";
+            if (badge.style) {
+              badge.style.background = "#FEE2E2";
+              badge.style.color = "#B91C1C";
+            }
+          }
+          if (warnBox && warnBox.style) warnBox.style.display = "block";
+        } else {
+          if (badge) {
+            badge.innerText = "⚠ Check Drive Script";
+            if (badge.style) {
+              badge.style.background = "#FEF3C7";
+              badge.style.color = "#92400E";
+            }
+          }
+          if (warnBox && warnBox.style && health && health.authRequired) warnBox.style.display = "block";
+        }
+      } catch (e) {
+        if (badge) badge.innerText = "⚠ Drive Check Failed";
+      }
+    }
+
+    async function copyDriveAppsScriptCode() {
+      try {
+        var res = await fetch("/DriveUpload_Standalone.gs");
+        if (!res.ok) throw new Error("Could not load DriveUpload_Standalone.gs");
+        var code = await res.text();
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(code);
+          alert("✔ Google Drive Upload Script copied!\n\nNext:\n1. Open script.google.com\n2. Paste & Save (Ctrl+S)\n3. Click Deploy -> Manage deployments -> Edit (Pencil) -> Version: New version -> Deploy\n4. Return here and click 'Test Drive' or 'Retry Push to Google Drive'.");
+        } else {
+          window.prompt("Copy DriveUpload_Standalone.gs code:", code);
+        }
+      } catch (err) {
+        alert("Open DriveUpload_Standalone.gs in your project folder and copy its contents into script.google.com.");
+      }
+    }
+
+    async function retryPendingDriveUpload() {
+      if (!pendingLocalDriveBackup) {
+        alert("Please select a media file first.");
+        return;
+      }
+      var statusEl = document.getElementById("form-media-upload-status");
+      var photoInput = document.getElementById("prod-form-photolink");
+      var previewEl = document.getElementById("form-media-preview");
+      var warnBox = document.getElementById("drive-script-warning");
+      var retryBtn = document.getElementById("btn-retry-drive-upload");
+
+      if (statusEl) statusEl.innerHTML = `<span style="color:var(--color-primary-navy);">⏳ Retrying upload to Google Drive folder 1E2MflyKllRq2a5kiZmFargIe5PvA8_X6...</span>`;
+
+      try {
+        var res = await window.ITVisionSupabase.retryLocalFileToDrive(pendingLocalDriveBackup.filename, pendingLocalDriveBackup.mimeType);
+        var mediaUrl = res.directUrl || res.fileUrl;
+        if (photoInput) photoInput.value = mediaUrl;
+        if (warnBox && warnBox.style) warnBox.style.display = "none";
+        if (retryBtn && retryBtn.style) retryBtn.style.display = "none";
+        if (statusEl) {
+          statusEl.innerHTML = `
+            <span style="color:var(--color-success-green); font-weight:700;">✔ Uploaded directly to Google Drive!</span>
+            <br><span style="font-size:10px; color:#475569;">Drive URL: ${mediaUrl}</span>
+          `;
+        }
+        renderMediaPreview(mediaUrl, pendingLocalDriveBackup.mimeType, previewEl);
+        pendingLocalDriveBackup = null;
+        checkAndRenderDriveStatus();
+      } catch (err) {
+        if (statusEl) {
+          statusEl.innerHTML = `<span style="color:var(--color-danger-red); font-weight:700;">❌ Still not saved to Google Drive: ${err.message}</span>`;
+        }
+        checkAndRenderDriveStatus();
+      }
     }
 
     /**
@@ -3085,6 +3209,8 @@
       var statusEl = document.getElementById("form-media-upload-status");
       var photoInput = document.getElementById("prod-form-photolink");
       var previewEl = document.getElementById("form-media-preview");
+      var warnBox = document.getElementById("drive-script-warning");
+      var retryBtn = document.getElementById("btn-retry-drive-upload");
 
       var detectedKind = file.type.startsWith("video/") ? "video" : (file.type.startsWith("audio/") ? "audio" : "photo");
       statusEl.innerHTML = `<span style="color:var(--color-primary-navy);">⏳ Autodetecting ${detectedKind} &amp; uploading "${file.name}" to Google Drive...</span>`;
@@ -3102,24 +3228,40 @@
         }
 
         var mediaUrl = uploadResult.directUrl || uploadResult.fileUrl;
-        
-        // Autodetect & set link in form input
+        pendingLocalDriveBackup = null;
+        if (warnBox && warnBox.style) warnBox.style.display = "none";
+        if (retryBtn && retryBtn.style) retryBtn.style.display = "none";
+
+        // Autodetect & set Google Drive CDN link in form input
         photoInput.value = mediaUrl;
 
-        var statusHtml = uploadResult.warning ? 
-          `<span style="color:#D97706; font-weight:700;">✔ Autodetected &amp; Uploaded ${detectedKind.toUpperCase()} (Saved locally)</span><br><span style="font-size:11px; color:#64748B;">ℹ ${uploadResult.warning}</span>` :
-          `<span style="color:var(--color-success-green); font-weight:700;">✔ Autodetected &amp; Uploaded ${detectedKind.toUpperCase()} to Google Drive!</span>`;
-
         statusEl.innerHTML = `
-          ${statusHtml}
-          <br><span style="font-size:10px; color:#475569;">URL: ${mediaUrl}</span>
+          <span style="color:var(--color-success-green); font-weight:700;">✔ Autodetected &amp; Saved ${detectedKind.toUpperCase()} to Google Drive!</span>
+          <br><span style="font-size:10px; color:#475569;">Drive URL: ${mediaUrl}</span>
         `;
 
         // Render live preview
         renderMediaPreview(mediaUrl, file.type, previewEl);
+        checkAndRenderDriveStatus();
 
       } catch (err) {
-        statusEl.innerHTML = `<span style="color:var(--color-danger-red);">❌ Upload failed: ${err.message}</span>`;
+        if (err && err.localBackupFilename) {
+          pendingLocalDriveBackup = {
+            filename: err.localBackupFilename,
+            mimeType: file.type || ""
+          };
+          if (retryBtn && retryBtn.style) retryBtn.style.display = "inline-block";
+        }
+        if (warnBox && warnBox.style) warnBox.style.display = "block";
+
+        statusEl.innerHTML = `
+          <span style="color:var(--color-danger-red); font-weight:700;">❌ NOT saved to Google Drive yet: ${err.message}</span>
+          <br><span style="font-size:11px; color:#64748B;">Follow the red box above to deploy <code>doPost(e)</code> in Google Apps Script, then click <strong>Retry Push to Google Drive</strong>.</span>
+        `;
+        if (err && err.localBackupUrl) {
+          renderMediaPreview(err.localBackupUrl, file.type, previewEl);
+        }
+        checkAndRenderDriveStatus();
       }
     }
 
@@ -3146,8 +3288,7 @@
 
     function autodetectDriveUrl(str) {
       if (!str) return "";
-      // Already an edge CDN URL
-      if (str.includes("lh3.googleusercontent.com/d/")) {
+      if (str.includes("lh3.googleusercontent.com/d/") || str.includes("drive.google.com/uc?export=download")) {
         return str;
       }
       // Pattern: /file/d/{FILE_ID}/

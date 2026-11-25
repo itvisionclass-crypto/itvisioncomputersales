@@ -178,6 +178,43 @@ async function checkSupabaseHealth() {
 }
 
 /**
+ * Check Google Drive Apps Script doPost readiness (via local proxy when hosted by server.js)
+ */
+async function checkDriveHealth() {
+  if (isServerHostedEnvironment()) {
+    try {
+      const res = await fetch("/api/drive/health");
+      if (res.ok) return await res.json();
+    } catch (_) {}
+  }
+  return {
+    connected: null,
+    doPostMissing: false,
+    targetFolderId: "1E2MflyKllRq2a5kiZmFargIe5PvA8_X6",
+    message: "Direct upload to Google Apps Script endpoint"
+  };
+}
+
+/**
+ * Retry pushing a locally backed-up file in `/uploads/` straight to Google Drive
+ */
+async function retryLocalFileToDrive(localFilename, mimeType) {
+  const res = await fetch("/api/drive/sync-local", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ filename: localFilename, mimeType: mimeType || "" })
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    const err = new Error(data.error || "Drive upload failed.");
+    err.doPostMissing = Boolean(data.doPostMissing);
+    err.driveErrorCode = data.driveErrorCode || null;
+    throw err;
+  }
+  return data;
+}
+
+/**
  * Upload Media (Photos, Videos, Audios) to Google Drive
  * via the Apps Script Web App Endpoint or local proxy.
  * 
@@ -234,16 +271,15 @@ async function uploadMediaToGoogleDrive(file, onStatusUpdate) {
             .withFailureHandler(function(err) {
               reject(err);
             })
-            .uploadPhoto(fullDataUrl, file.name);
+            .uploadPhoto(fullDataUrl, file.name, file.type || "");
           return;
         }
 
-        // Determine upload endpoint: use local proxy if on localhost/127.0.0.1 to prevent CORS errors
-        const isLocalHost = typeof window !== "undefined" &&
-          (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.port === "3000");
-        const uploadEndpoint = isLocalHost ? "/api/upload-media" : IT_VISION_CONFIG.MEDIA_UPLOAD_ENDPOINT;
+        // Determine upload endpoint: use local proxy if hosted by server.js to prevent CORS errors
+        const useServerProxy = isServerHostedEnvironment();
+        const uploadEndpoint = useServerProxy ? "/api/upload-media" : IT_VISION_CONFIG.MEDIA_UPLOAD_ENDPOINT;
 
-        if (onStatusUpdate) onStatusUpdate(`Uploading ${file.name} to ${isLocalHost ? 'Server Proxy / Google Drive' : 'Google Drive'}...`);
+        if (onStatusUpdate) onStatusUpdate(`Uploading ${file.name} to Google Drive folder 1E2MflyKllRq2a5kiZmFargIe5PvA8_X6...`);
 
         const response = await fetch(uploadEndpoint, {
           method: "POST",
@@ -253,18 +289,21 @@ async function uploadMediaToGoogleDrive(file, onStatusUpdate) {
           body: JSON.stringify(payload)
         });
 
-        if (!response.ok) {
-          throw new Error(`Server returned HTTP ${response.status}: ${response.statusText}`);
+        let result = null;
+        try {
+          result = await response.json();
+        } catch (_) {
+          throw new Error(`Upload endpoint returned HTTP ${response.status} (invalid JSON).`);
         }
 
-        const result = await response.json();
-
-        if (result && (result.success || result.status === "success" || result.fileUrl || result.directUrl || result.url)) {
+        if (response.ok && result && (result.success || result.status === "success" || result.fileUrl || result.directUrl || result.url)) {
           let directUrl = result.directUrl;
           if (!directUrl && result.url) {
             var m = result.url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
             if (m && m[1]) {
-              directUrl = `https://lh3.googleusercontent.com/d/${m[1]}=w800-rw`;
+              directUrl = (file.type && (file.type.startsWith("video/") || file.type.startsWith("audio/")))
+                ? `https://drive.google.com/uc?export=download&id=${m[1]}`
+                : `https://lh3.googleusercontent.com/d/${m[1]}=w800-rw`;
             } else {
               directUrl = result.url;
             }
@@ -272,11 +311,7 @@ async function uploadMediaToGoogleDrive(file, onStatusUpdate) {
             directUrl = `https://lh3.googleusercontent.com/d/${result.fileId}=w800-rw`;
           }
 
-          const statusMsg = result.warning ?
-            `✔ Uploaded! (${result.warning})` :
-            `✔ Uploaded successfully!`;
-
-          if (onStatusUpdate) onStatusUpdate(statusMsg);
+          if (onStatusUpdate) onStatusUpdate(`✔ Uploaded directly to Google Drive!`);
 
           resolve({
             success: true,
@@ -285,15 +320,21 @@ async function uploadMediaToGoogleDrive(file, onStatusUpdate) {
             fileId: result.fileId || "",
             fileUrl: result.fileUrl || result.url || directUrl,
             directUrl: directUrl,
+            previewUrl: result.previewUrl || directUrl,
             filename: result.filename || file.name,
-            warning: result.warning || null
+            mimeType: file.type || ""
           });
         } else {
-          throw new Error(result.error || result.message || "Upload failed from storage service.");
+          const err = new Error((result && (result.error || result.message)) || `Google Drive upload failed (HTTP ${response.status}).`);
+          err.doPostMissing = Boolean(result && result.doPostMissing);
+          err.driveErrorCode = (result && result.driveErrorCode) || null;
+          err.localBackupFilename = (result && result.localBackupFilename) || null;
+          err.localBackupUrl = (result && result.localBackupUrl) || null;
+          throw err;
         }
       } catch (err) {
         console.error("Media upload error:", err);
-        if (onStatusUpdate) onStatusUpdate(`❌ Upload failed: ${err.message}`);
+        if (onStatusUpdate) onStatusUpdate(`❌ Google Drive upload failed: ${err.message}`);
         reject(err);
       }
     };
@@ -463,6 +504,8 @@ window.ITVisionSupabase = {
   isConnected: isSupabaseConnected,
   isServerBacked: () => serverBackendAvailable,
   checkHealth: checkSupabaseHealth,
+  checkDriveHealth: checkDriveHealth,
+  retryLocalFileToDrive: retryLocalFileToDrive,
   uploadMedia: uploadMediaToGoogleDrive,
   fetchProducts: fetchSupabaseProducts,
   saveProduct: saveSupabaseProduct,

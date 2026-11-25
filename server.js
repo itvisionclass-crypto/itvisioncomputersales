@@ -221,7 +221,7 @@ function forwardToGoogleAppsScript(payload) {
 }
 
 /**
- * Save file locally as a reliable fallback
+ * Save file locally as a recovery backup when Drive deployment is pending
  */
 function saveFileLocally(filename, base64Content) {
   const safeName = Date.now() + '_' + filename.replace(/[^a-zA-Z0-9._-]/g, '_');
@@ -229,6 +229,55 @@ function saveFileLocally(filename, base64Content) {
   const fileBuffer = Buffer.from(base64Content, 'base64');
   fs.writeFileSync(targetPath, fileBuffer);
   return safeName;
+}
+
+/**
+ * Upload media payload to Google Drive via Apps Script Web App with detailed diagnostics.
+ */
+async function uploadBufferToDrive({ filename, mimeType, base64 }) {
+  try {
+    const gasRes = await forwardToGoogleAppsScript({ filename, mimeType, base64 });
+    if (gasRes && gasRes.data && (gasRes.data.success || gasRes.data.status === 'success' || gasRes.data.fileUrl || gasRes.data.directUrl)) {
+      const fileId = gasRes.data.fileId || '';
+      const isMediaStream = mimeType.startsWith('video/') || mimeType.startsWith('audio/');
+      const defaultUrl = fileId
+        ? (isMediaStream ? `https://drive.google.com/uc?export=download&id=${fileId}` : `https://lh3.googleusercontent.com/d/${fileId}=w800-rw`)
+        : (gasRes.data.url || gasRes.data.fileUrl);
+      const directUrl = gasRes.data.directUrl || defaultUrl;
+      return {
+        ok: true,
+        fileId,
+        filename,
+        mimeType,
+        fileUrl: gasRes.data.fileUrl || gasRes.data.url || directUrl,
+        directUrl,
+        previewUrl: gasRes.data.previewUrl || (fileId ? `https://drive.google.com/file/d/${fileId}/preview` : directUrl)
+      };
+    }
+
+    const rawText = (gasRes && gasRes.rawBody) ? gasRes.rawBody : '';
+    const jsonErr = (gasRes && gasRes.data && (gasRes.data.error || gasRes.data.message)) || '';
+    const isDoPostMissing = rawText.includes('Script function not found: doPost');
+    const isAuthHtml = rawText.includes('ServiceLogin') || rawText.includes('accounts.google.com') || rawText.includes('Authorization');
+
+    return {
+      ok: false,
+      doPostMissing: isDoPostMissing,
+      driveErrorCode: isDoPostMissing ? 'DOPOST_MISSING' : (isAuthHtml ? 'AUTH_REQUIRED' : 'SCRIPT_ERROR'),
+      error: isDoPostMissing
+        ? 'Google Apps Script is missing doPost(e) or needs a New Version deployment on script.google.com.'
+        : isAuthHtml
+          ? 'Google Apps Script returned a login/permission page. Set "Execute as: Me" and "Who has access: Anyone".'
+          : (jsonErr || 'Google Apps Script did not return a Drive file URL.')
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      doPostMissing: false,
+      driveErrorCode: 'NETWORK_ERROR',
+      error: 'Could not reach Google Apps Script: ' + err.message
+    };
+  }
 }
 
 const server = http.createServer(async (req, res) => {
@@ -404,7 +453,86 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
-  // 4. API Proxy Route for Google Drive Media Uploads
+  // 4. Google Drive Health Check & Local-Backup-to-Drive Sync Routes
+  if (pathname === '/api/drive/health' && req.method === 'GET') {
+    try {
+      const gasRes = await forwardToGoogleAppsScript({ action: 'ping' });
+      const rawText = (gasRes && gasRes.rawBody) ? gasRes.rawBody : '';
+      const isDoPostMissing = rawText.includes('Script function not found: doPost');
+      const isAuthHtml = rawText.includes('ServiceLogin') || rawText.includes('accounts.google.com') || rawText.includes('Authorization');
+      const isReadyJson = Boolean(
+        gasRes && gasRes.data && (
+          gasRes.data.doPostReady ||
+          gasRes.data.status === 'ok' ||
+          (gasRes.data.message && gasRes.data.message.includes('Missing base64'))
+        )
+      );
+
+      return sendJson(res, 200, {
+        connected: isReadyJson,
+        doPostMissing: isDoPostMissing,
+        authRequired: isAuthHtml,
+        targetFolderId: '1E2MflyKllRq2a5kiZmFargIe5PvA8_X6',
+        message: isReadyJson
+          ? 'Google Apps Script doPost(e) is live! All photos, videos, and audios save to Google Drive.'
+          : isDoPostMissing
+            ? 'Google Apps Script deployment is missing doPost(e). Copy DriveUpload_Standalone.gs, paste into script.google.com, and deploy a New Version.'
+            : isAuthHtml
+              ? 'Google Apps Script requires "Execute as: Me" and "Who has access: Anyone".'
+              : 'Google Apps Script did not return expected JSON status.'
+      });
+    } catch (err) {
+      return sendJson(res, 502, {
+        connected: false,
+        doPostMissing: false,
+        message: 'Network error testing Google Apps Script: ' + err.message
+      });
+    }
+  }
+
+  if (pathname === '/api/drive/sync-local' && req.method === 'POST') {
+    try {
+      const rawBody = await readRequestBody(req);
+      const { filename, mimeType } = JSON.parse(rawBody || '{}');
+      if (!filename) {
+        return sendJson(res, 400, { success: false, error: 'Missing local filename.' });
+      }
+      const safeTarget = path.resolve(UPLOADS_DIR, path.basename(String(filename)));
+      if (!safeTarget.startsWith(UPLOADS_DIR + path.sep) || !fs.existsSync(safeTarget)) {
+        return sendJson(res, 404, { success: false, error: 'Local backup file not found.' });
+      }
+      const base64 = fs.readFileSync(safeTarget).toString('base64');
+      const ext = path.extname(safeTarget).toLowerCase();
+      const resolvedMime = mimeType || MIME_TYPES[ext] || 'application/octet-stream';
+      const driveRes = await uploadBufferToDrive({ filename: path.basename(safeTarget), mimeType: resolvedMime, base64 });
+
+      if (driveRes.ok) {
+        return sendJson(res, 200, {
+          status: 'success',
+          success: true,
+          source: 'google_drive',
+          fileId: driveRes.fileId,
+          filename: driveRes.filename,
+          fileUrl: driveRes.fileUrl,
+          directUrl: driveRes.directUrl,
+          previewUrl: driveRes.previewUrl,
+          message: 'Synced directly to Google Drive folder 1E2MflyKllRq2a5kiZmFargIe5PvA8_X6'
+        });
+      }
+
+      return sendJson(res, 502, {
+        status: 'error',
+        success: false,
+        doPostMissing: driveRes.doPostMissing,
+        driveErrorCode: driveRes.driveErrorCode,
+        error: driveRes.error
+      });
+    } catch (err) {
+      return sendJson(res, 500, { status: 'error', success: false, error: err.message });
+    }
+  }
+
+  // 5. API Proxy Route for Google Drive Media Uploads
   if (pathname === '/api/upload-media' && req.method === 'POST') {
     try {
       const body = await readRequestBody(req, 50 * 1024 * 1024);
@@ -417,49 +545,35 @@ const server = http.createServer(async (req, res) => {
       const filename = payload.filename || ('media_' + Date.now() + '.jpg');
       const mimeType = payload.mimeType || 'application/octet-stream';
 
-      let gasSuccess = false;
-      let gasResult = null;
-
-      try {
-        const gasRes = await forwardToGoogleAppsScript({ filename, mimeType, base64 });
-        if (gasRes && gasRes.data && (gasRes.data.success || gasRes.data.status === 'success' || gasRes.data.fileUrl || gasRes.data.directUrl)) {
-          gasSuccess = true;
-          gasResult = gasRes.data;
-        } else {
-          console.warn('[Upload Proxy] Google Apps Script response:', gasRes.data || (gasRes.rawBody ? gasRes.rawBody.slice(0, 200) : 'No response'));
-        }
-      } catch (gasErr) {
-        console.warn('[Upload Proxy] Google Apps Script connection error:', gasErr.message);
-      }
-
-      if (gasSuccess && gasResult) {
-        const fileId = gasResult.fileId || '';
-        const directUrl = gasResult.directUrl || (fileId ? `https://lh3.googleusercontent.com/d/${fileId}=w800-rw` : gasResult.url || gasResult.fileUrl);
+      const driveRes = await uploadBufferToDrive({ filename, mimeType, base64 });
+      if (driveRes.ok) {
         return sendJson(res, 200, {
           status: 'success',
           success: true,
           source: 'google_drive',
-          fileId,
-          filename,
-          fileUrl: gasResult.fileUrl || gasResult.url || directUrl,
-          directUrl,
+          fileId: driveRes.fileId,
+          filename: driveRes.filename,
+          fileUrl: driveRes.fileUrl,
+          directUrl: driveRes.directUrl,
+          previewUrl: driveRes.previewUrl,
           message: 'Uploaded directly to Google Drive folder 1E2MflyKllRq2a5kiZmFargIe5PvA8_X6'
         });
       }
 
-      console.log(`[Upload Proxy] Saving ${filename} locally to /uploads/...`);
+      // Save temporary recovery backup so user can 1-click retry to Google Drive once doPost is deployed,
+      // but return an honest 502 error instead of pretending it saved to Google Drive!
+      console.warn(`[Upload Proxy] Google Drive upload rejected (${driveRes.driveErrorCode}): ${driveRes.error}`);
       const savedName = saveFileLocally(filename, base64);
-      const localUrl = `http://localhost:${PORT}/uploads/${savedName}`;
+      const backupUrl = `http://localhost:${PORT}/uploads/${savedName}`;
 
-      return sendJson(res, 200, {
-        status: 'success',
-        success: true,
-        source: 'local_storage',
-        filename: savedName,
-        fileUrl: localUrl,
-        directUrl: localUrl,
-        warning: 'Saved locally on server. To store in Google Drive, deploy the updated Code.gs in Google Apps Script.',
-        instructions: 'Deploy Code.gs in script.google.com as New Version.'
+      return sendJson(res, 502, {
+        status: 'error',
+        success: false,
+        doPostMissing: driveRes.doPostMissing,
+        driveErrorCode: driveRes.driveErrorCode,
+        error: driveRes.error,
+        localBackupFilename: savedName,
+        localBackupUrl: backupUrl
       });
     } catch (err) {
       console.error('[Upload Proxy] Error:', err);

@@ -64,6 +64,15 @@ function doPost(e) {
       payload = {};
     }
 
+    if (payload && payload.action === "ping") {
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "ok",
+        success: true,
+        doPostReady: true,
+        targetFolderId: FOLDERS.TARGET_MEDIA_FOLDER_ID
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
     var base64Data = payload.base64 || payload.data || payload.file;
     if (!base64Data) {
       return ContentService.createTextOutput(JSON.stringify({
@@ -72,47 +81,12 @@ function doPost(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    // Strip data URL scheme prefix if present
-    if (base64Data.indexOf("base64,") !== -1) {
-      base64Data = base64Data.split("base64,")[1];
-    }
-
     var filename = payload.filename || ("itv_media_" + Date.now());
     var mimeType = payload.mimeType || "application/octet-stream";
 
-    var decoded = Utilities.base64Decode(base64Data);
-    var blob = Utilities.newBlob(decoded, mimeType, filename);
-
-    // Save to specified Google Drive Target Folder
-    var targetFolder;
-    try {
-      targetFolder = DriveApp.getFolderById(FOLDERS.TARGET_MEDIA_FOLDER_ID);
-    } catch (fErr) {
-      var rootFolder = DriveApp.getRootFolder();
-      var appFolder = getOrCreateFolder(rootFolder, FOLDERS.ROOT);
-      targetFolder = getOrCreateFolder(appFolder, FOLDERS.IMAGES);
-    }
-
-    var file = targetFolder.createFile(blob);
-    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-
-    var fileId = file.getId();
-    var directUrl = "https://lh3.googleusercontent.com/d/" + fileId + "=w800-rw";
-
-    var output = {
-      status: "success",
-      success: true,
-      fileId: fileId,
-      filename: filename,
-      mimeType: mimeType,
-      url: file.getUrl(),
-      fileUrl: file.getUrl(),
-      directUrl: directUrl,
-      downloadUrl: file.getDownloadUrl(),
-      message: "Media file uploaded successfully to Google Drive."
-    };
-
-    return ContentService.createTextOutput(JSON.stringify(output))
+    // Delegate cleanly to shared uploadPhoto helper
+    var result = uploadPhoto(base64Data, filename, mimeType);
+    return ContentService.createTextOutput(JSON.stringify(result))
       .setMimeType(ContentService.MimeType.JSON);
 
   } catch (err) {
@@ -128,14 +102,14 @@ function doPost(e) {
  * Mobile Camera & Media Direct RPC Upload Engine
  * Target Folder ID: 1E2MflyKllRq2a5kiZmFargIe5PvA8_X6
  */
-function uploadPhoto(base64Data, fileName) {
+function uploadPhoto(base64Data, fileName, explicitMimeType) {
   try {
     var folderId = FOLDERS.TARGET_MEDIA_FOLDER_ID;
     var folder = DriveApp.getFolderById(folderId);
 
-    // Convert Base64 data to blob
-    var contentType = "image/jpeg";
-    if (base64Data.indexOf(';') !== -1 && base64Data.indexOf(':') !== -1) {
+    // Convert Base64 data to blob while preserving video/audio/image MIME types
+    var contentType = explicitMimeType || "image/jpeg";
+    if (base64Data.indexOf('data:') === 0 && base64Data.indexOf(';') !== -1) {
       contentType = base64Data.substring(5, base64Data.indexOf(';'));
     }
 
@@ -152,7 +126,9 @@ function uploadPhoto(base64Data, fileName) {
     file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
 
     var fileId = file.getId();
-    var directUrl = "https://lh3.googleusercontent.com/d/" + fileId + "=w800-rw";
+    var directUrl = contentType.indexOf("image/") === 0
+      ? ("https://lh3.googleusercontent.com/d/" + fileId + "=w800-rw")
+      : ("https://drive.google.com/uc?export=download&id=" + fileId);
 
     return {
       status: "success",
@@ -160,7 +136,12 @@ function uploadPhoto(base64Data, fileName) {
       url: file.getUrl(),
       fileUrl: file.getUrl(),
       directUrl: directUrl,
-      fileId: fileId
+      previewUrl: "https://drive.google.com/file/d/" + fileId + "/preview",
+      downloadUrl: file.getDownloadUrl(),
+      fileId: fileId,
+      filename: fileName || file.getName(),
+      mimeType: contentType,
+      message: "Media file uploaded successfully to Google Drive."
     };
   } catch (error) {
     return {

@@ -1,0 +1,9 @@
+.env
+.env.*
+.git/
+.gsd/
+uploads/
+server.js
+test_verify.js
+Code.gs
+DriveUpload_Standalone.gs

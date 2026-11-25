@@ -41,7 +41,7 @@ if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
 
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwa3D0RyEZl50W6IDGijCKcaL7qbSBm9q4W05yy4l7G5LRIZ9fQvww6j-PVkGoQ7ID53g/exec";
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxRR30Z9eMtp6WntWzfIB8Bg52jPWXah-b4pDQsFeOR6fn0A6TqTmocbZSVFlE4Ip4noQ/exec";
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -535,7 +535,7 @@ const server = http.createServer(async (req, res) => {
   // 5. API Proxy Route for Google Drive Media Uploads
   if (pathname === '/api/upload-media' && req.method === 'POST') {
     try {
-      const body = await readRequestBody(req, 50 * 1024 * 1024);
+      const body = await readRequestBody(req, 100 * 1024 * 1024);
       const payload = JSON.parse(body);
       let base64 = payload.base64 || '';
       if (base64.indexOf('base64,') !== -1) {

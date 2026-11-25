@@ -3,7 +3,7 @@
  * Google Drive Media Upload Engine (Standalone Google Apps Script)
  * 
  * Target Google Drive Folder ID: 1E2MflyKllRq2a5kiZmFargIe5PvA8_X6
- * Web App Endpoint: https://script.google.com/macros/s/AKfycbwa3D0RyEZl50W6IDGijCKcaL7qbSBm9q4W05yy4l7G5LRIZ9fQvww6j-PVkGoQ7ID53g/exec
+ * Web App Endpoint: https://script.google.com/macros/s/AKfycbxRR30Z9eMtp6WntWzfIB8Bg52jPWXah-b4pDQsFeOR6fn0A6TqTmocbZSVFlE4Ip4noQ/exec
  * 
  * Instructions to Deploy (REQUIRED ONCE):
  * 1. Open your Apps Script project at https://script.google.com

@@ -4,7 +4,7 @@
  * 
  * Supabase Project: mztnzrpfpszfieooeprj
  * Supabase URL: https://mztnzrpfpszfieooeprj.supabase.co
- * Google Drive Media Script URL: https://script.google.com/macros/s/AKfycbwa3D0RyEZl50W6IDGijCKcaL7qbSBm9q4W05yy4l7G5LRIZ9fQvww6j-PVkGoQ7ID53g/exec
+ * Google Drive Media Script URL: https://script.google.com/macros/s/AKfycbxRR30Z9eMtp6WntWzfIB8Bg52jPWXah-b4pDQsFeOR6fn0A6TqTmocbZSVFlE4Ip4noQ/exec
  * 
  * Security Note:
  * Private credentials (SUPABASE_SECRET_KEY) are kept strictly in server `.env` and
@@ -19,7 +19,7 @@ const IT_VISION_CONFIG = {
   SUPABASE_PROJECT_ID: "mztnzrpfpszfieooeprj",
   SUPABASE_URL: "https://mztnzrpfpszfieooeprj.supabase.co",
   SUPABASE_ANON_KEY: (typeof localStorage !== "undefined" ? localStorage.getItem("ITV_SUPABASE_ANON_KEY") : "") || "",
-  MEDIA_UPLOAD_ENDPOINT: "https://script.google.com/macros/s/AKfycbwa3D0RyEZl50W6IDGijCKcaL7qbSBm9q4W05yy4l7G5LRIZ9fQvww6j-PVkGoQ7ID53g/exec"
+  MEDIA_UPLOAD_ENDPOINT: "https://script.google.com/macros/s/AKfycbxRR30Z9eMtp6WntWzfIB8Bg52jPWXah-b4pDQsFeOR6fn0A6TqTmocbZSVFlE4Ip4noQ/exec"
 };
 
 let supabaseClient = null;
@@ -216,21 +216,34 @@ async function retryLocalFileToDrive(localFilename, mimeType) {
 
 /**
  * Upload Media (Photos, Videos, Audios) to Google Drive
- * via the Apps Script Web App Endpoint or local proxy.
+ * via the Apps Script Web App Endpoint or local proxy with live percentage progress.
  * 
  * @param {File} file - The file object from <input type="file">
  * @param {Function} [onStatusUpdate] - Callback for progress/status messages
+ * @param {Function} [onProgress] - Callback receiving (percent: number, label: string)
  * @returns {Promise<{success: boolean, directUrl: string, fileUrl: string, fileId: string}>}
  */
-async function uploadMediaToGoogleDrive(file, onStatusUpdate) {
+async function uploadMediaToGoogleDrive(file, onStatusUpdate, onProgress) {
   if (!file) {
     throw new Error("No file provided for upload.");
   }
 
-  if (onStatusUpdate) onStatusUpdate(`Reading ${file.name} (${Math.round(file.size / 1024)} KB)...`);
+  const emitProgress = (pct, msg) => {
+    if (onProgress) onProgress(Math.min(100, Math.max(0, Math.round(pct))), msg);
+    if (msg && onStatusUpdate) onStatusUpdate(msg);
+  };
+
+  emitProgress(5, `Preparing ${file.name} (${Math.round(file.size / 1024)} KB)...`);
 
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
+
+    reader.onprogress = function(ev) {
+      if (ev.lengthComputable) {
+        const readPct = 5 + Math.round((ev.loaded / ev.total) * 15);
+        emitProgress(readPct, `Reading ${file.name}...`);
+      }
+    };
 
     reader.onload = async function() {
       try {
@@ -246,16 +259,17 @@ async function uploadMediaToGoogleDrive(file, onStatusUpdate) {
           base64: base64Content
         };
 
-        if (onStatusUpdate) onStatusUpdate(`Uploading ${file.name} to Google Drive...`);
+        emitProgress(20, `Starting upload of ${file.name} to Google Drive...`);
 
         // 1. Direct Apps Script RPC if running inside Google Apps Script
         if (typeof google !== "undefined" && google.script && google.script.run && typeof google.script.run.uploadPhoto === "function") {
+          emitProgress(50, `Uploading ${file.name} via Google Apps Script...`);
           google.script.run
             .withSuccessHandler(function(res) {
               if (res && (res.status === "success" || res.success)) {
                 var directUrl = res.directUrl ||
                   (res.fileId ? `https://lh3.googleusercontent.com/d/${res.fileId}=w800-rw` : res.url);
-                if (onStatusUpdate) onStatusUpdate(`✔ Uploaded successfully to Google Drive!`);
+                emitProgress(100, `✔ Uploaded successfully to Google Drive!`);
                 resolve({
                   success: true,
                   status: "success",
@@ -279,24 +293,43 @@ async function uploadMediaToGoogleDrive(file, onStatusUpdate) {
         const useServerProxy = isServerHostedEnvironment();
         const uploadEndpoint = useServerProxy ? "/api/upload-media" : IT_VISION_CONFIG.MEDIA_UPLOAD_ENDPOINT;
 
-        if (onStatusUpdate) onStatusUpdate(`Uploading ${file.name} to Google Drive folder 1E2MflyKllRq2a5kiZmFargIe5PvA8_X6...`);
+        const xhrResult = await new Promise((xhrResolve, xhrReject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open("POST", uploadEndpoint, true);
+          xhr.setRequestHeader("Content-Type", useServerProxy ? "application/json" : "text/plain;charset=utf-8");
 
-        const response = await fetch(uploadEndpoint, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(payload)
+          xhr.upload.onprogress = function(ev) {
+            if (ev.lengthComputable && ev.total > 0) {
+              const pct = 20 + Math.round((ev.loaded / ev.total) * 65);
+              emitProgress(pct, `Uploading ${file.name}... ${Math.round((ev.loaded / ev.total) * 100)}%`);
+            }
+          };
+
+          xhr.upload.onload = function() {
+            emitProgress(90, `Saving ${file.name} to Google Drive...`);
+          };
+
+          xhr.onreadystatechange = function() {
+            if (xhr.readyState !== 4) return;
+            let parsed = null;
+            try {
+              parsed = JSON.parse(xhr.responseText);
+            } catch (_) {
+              return xhrReject(new Error(`Upload endpoint returned HTTP ${xhr.status} (invalid JSON).`));
+            }
+            xhrResolve({ ok: xhr.status >= 200 && xhr.status < 300, status: xhr.status, result: parsed });
+          };
+
+          xhr.onerror = function() {
+            xhrReject(new Error("Network error during media upload."));
+          };
+
+          xhr.send(JSON.stringify(payload));
         });
 
-        let result = null;
-        try {
-          result = await response.json();
-        } catch (_) {
-          throw new Error(`Upload endpoint returned HTTP ${response.status} (invalid JSON).`);
-        }
+        const { ok, status, result } = xhrResult;
 
-        if (response.ok && result && (result.success || result.status === "success" || result.fileUrl || result.directUrl || result.url)) {
+        if (ok && result && (result.success || result.status === "success" || result.fileUrl || result.directUrl || result.url)) {
           let directUrl = result.directUrl;
           if (!directUrl && result.url) {
             var m = result.url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
@@ -311,7 +344,7 @@ async function uploadMediaToGoogleDrive(file, onStatusUpdate) {
             directUrl = `https://lh3.googleusercontent.com/d/${result.fileId}=w800-rw`;
           }
 
-          if (onStatusUpdate) onStatusUpdate(`✔ Uploaded directly to Google Drive!`);
+          emitProgress(100, `✔ Uploaded to Google Drive!`);
 
           resolve({
             success: true,
@@ -325,7 +358,7 @@ async function uploadMediaToGoogleDrive(file, onStatusUpdate) {
             mimeType: file.type || ""
           });
         } else {
-          const err = new Error((result && (result.error || result.message)) || `Google Drive upload failed (HTTP ${response.status}).`);
+          const err = new Error((result && (result.error || result.message)) || `Google Drive upload failed (HTTP ${status}).`);
           err.doPostMissing = Boolean(result && result.doPostMissing);
           err.driveErrorCode = (result && result.driveErrorCode) || null;
           err.localBackupFilename = (result && result.localBackupFilename) || null;
@@ -334,7 +367,7 @@ async function uploadMediaToGoogleDrive(file, onStatusUpdate) {
         }
       } catch (err) {
         console.error("Media upload error:", err);
-        if (onStatusUpdate) onStatusUpdate(`❌ Google Drive upload failed: ${err.message}`);
+        if (onStatusUpdate) onStatusUpdate(`❌ Upload failed: ${err.message}`);
         reject(err);
       }
     };

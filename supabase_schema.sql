@@ -4,7 +4,7 @@
 -- Project ID: mztnzrpfpszfieooeprj
 -- Endpoint: https://mztnzrpfpszfieooeprj.supabase.co
 -- Note: Media assets (photos, videos, audios) are hosted on Google Drive:
--- https://script.google.com/macros/s/AKfycbwa3D0RyEZl50W6IDGijCKcaL7qbSBm9q4W05yy4l7G5LRIZ9fQvww6j-PVkGoQ7ID53g/exec
+-- https://script.google.com/macros/s/AKfycbxRR30Z9eMtp6WntWzfIB8Bg52jPWXah-b4pDQsFeOR6fn0A6TqTmocbZSVFlE4Ip4noQ/exec
 -- =============================================================================
 
 -- 1. Remove all old tables from Supabase to keep ONLY products table

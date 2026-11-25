@@ -46,56 +46,85 @@ function doGet(e) {
 }
 
 /**
+ * Run once inside the Apps Script editor to authorize Google Drive access.
+ */
+function testDriveAuthorization() {
+  var folder = DriveApp.getFolderById(FOLDERS.TARGET_MEDIA_FOLDER_ID);
+  Logger.log("Authorized access to Google Drive folder: " + folder.getName());
+  return folder.getName();
+}
+
+/**
  * HTTP POST Entry Point for Media Uploads (Photos, Videos, Audios)
- * Direct upload engine saving files to Google Drive
+ * Handles both Form URL-Encoded (e.parameter) and JSON (e.postData.contents) payloads
  */
 function doPost(e) {
   try {
-    var payload;
-    if (e && e.postData && e.postData.contents) {
-      try {
-        payload = JSON.parse(e.postData.contents);
-      } catch (parseErr) {
-        payload = e.parameter;
+    var base64Data = "";
+    var fileName = "";
+    var mimeType = "";
+
+    // 1. Form URL-Encoded parameters (e.parameter)
+    if (e && e.parameter && (e.parameter.base64 || e.parameter.data)) {
+      base64Data = e.parameter.base64 || e.parameter.data;
+      fileName = e.parameter.filename || ("Media_" + Date.now() + ".jpg");
+      mimeType = e.parameter.mimeType || inferMimeTypeFromName(fileName);
+    }
+    // 2. JSON payload (e.postData.contents)
+    else if (e && e.postData && e.postData.contents) {
+      var payload = JSON.parse(e.postData.contents);
+      if (payload && payload.action === "ping") {
+        return ContentService.createTextOutput(JSON.stringify({
+          status: "ok",
+          success: true,
+          doPostReady: true,
+          targetFolderId: FOLDERS.TARGET_MEDIA_FOLDER_ID
+        })).setMimeType(ContentService.MimeType.JSON);
       }
-    } else if (e && e.parameter) {
-      payload = e.parameter;
-    } else {
-      payload = {};
+      base64Data = payload.base64 || payload.data || payload.file;
+      fileName = payload.filename || ("Media_" + Date.now() + ".jpg");
+      mimeType = payload.mimeType || inferMimeTypeFromName(fileName);
     }
 
-    if (payload && payload.action === "ping") {
-      return ContentService.createTextOutput(JSON.stringify({
-        status: "ok",
-        success: true,
-        doPostReady: true,
-        targetFolderId: FOLDERS.TARGET_MEDIA_FOLDER_ID
-      })).setMimeType(ContentService.MimeType.JSON);
-    }
-
-    var base64Data = payload.base64 || payload.data || payload.file;
     if (!base64Data) {
       return ContentService.createTextOutput(JSON.stringify({
+        status: "error",
         success: false,
-        error: "Missing base64 file data in payload."
+        message: "Missing base64 data in payload."
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    var filename = payload.filename || ("itv_media_" + Date.now());
-    var mimeType = payload.mimeType || "application/octet-stream";
-
-    // Delegate cleanly to shared uploadPhoto helper
-    var result = uploadPhoto(base64Data, filename, mimeType);
-    return ContentService.createTextOutput(JSON.stringify(result))
+    var uploadResult = uploadPhoto(base64Data, fileName, mimeType);
+    return ContentService.createTextOutput(JSON.stringify(uploadResult))
       .setMimeType(ContentService.MimeType.JSON);
 
-  } catch (err) {
+  } catch (error) {
     return ContentService.createTextOutput(JSON.stringify({
       status: "error",
       success: false,
-      error: "Upload handler error: " + err.toString()
+      message: error.toString()
     })).setMimeType(ContentService.MimeType.JSON);
   }
+}
+
+/**
+ * Infer MIME type from file extension when not explicitly supplied.
+ */
+function inferMimeTypeFromName(fileName) {
+  var lower = (fileName || "").toLowerCase();
+  if (lower.endsWith(".png")) return "image/png";
+  if (lower.endsWith(".webp")) return "image/webp";
+  if (lower.endsWith(".gif")) return "image/gif";
+  if (lower.endsWith(".svg")) return "image/svg+xml";
+  if (lower.endsWith(".mp4")) return "video/mp4";
+  if (lower.endsWith(".webm")) return "video/webm";
+  if (lower.endsWith(".mov")) return "video/quicktime";
+  if (lower.endsWith(".mp3")) return "audio/mpeg";
+  if (lower.endsWith(".wav")) return "audio/wav";
+  if (lower.endsWith(".ogg")) return "audio/ogg";
+  if (lower.endsWith(".m4a")) return "audio/mp4";
+  if (lower.endsWith(".pdf")) return "application/pdf";
+  return "image/jpeg";
 }
 
 /**
@@ -108,22 +137,26 @@ function uploadPhoto(base64Data, fileName, explicitMimeType) {
     var folder = DriveApp.getFolderById(folderId);
 
     // Convert Base64 data to blob while preserving video/audio/image MIME types
-    var contentType = explicitMimeType || "image/jpeg";
+    var contentType = explicitMimeType || inferMimeTypeFromName(fileName);
     if (base64Data.indexOf('data:') === 0 && base64Data.indexOf(';') !== -1) {
       contentType = base64Data.substring(5, base64Data.indexOf(';'));
     }
 
     var rawBase64 = base64Data;
-    if (base64Data.indexOf(',') !== -1) {
-      rawBase64 = base64Data.split(',')[1];
+    if (rawBase64.indexOf(',') !== -1) {
+      rawBase64 = rawBase64.split(',')[1];
     }
 
     var bytes = Utilities.base64Decode(rawBase64);
-    var blob = Utilities.newBlob(bytes, contentType, fileName || ("media_" + Date.now() + ".jpg"));
+    var blob = Utilities.newBlob(bytes, contentType, fileName || ("Media_" + Date.now() + ".jpg"));
 
     // Save file in Google Drive
     var file = folder.createFile(blob);
-    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    try {
+      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    } catch (permErr) {
+      Logger.log("Sharing permission warning: " + permErr.toString());
+    }
 
     var fileId = file.getId();
     var directUrl = contentType.indexOf("image/") === 0
@@ -141,7 +174,7 @@ function uploadPhoto(base64Data, fileName, explicitMimeType) {
       fileId: fileId,
       filename: fileName || file.getName(),
       mimeType: contentType,
-      message: "Media file uploaded successfully to Google Drive."
+      message: "File uploaded successfully"
     };
   } catch (error) {
     return {

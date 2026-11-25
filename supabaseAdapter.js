@@ -53,9 +53,10 @@ async function initSupabaseAsync() {
     if (isServerHostedEnvironment()) {
       try {
         const res = await fetch("/api/supabase/config", { method: "GET" });
-        if (res.ok) {
+        const contentType = (res.headers && res.headers.get && res.headers.get("content-type")) || "";
+        if (res.ok && contentType.includes("application/json")) {
           const cfg = await res.json();
-          if (cfg && cfg.connected) {
+          if (cfg && cfg.connected && cfg.mode === "server_env") {
             serverBackendAvailable = true;
             if (cfg.url) IT_VISION_CONFIG.SUPABASE_URL = cfg.url;
             if (cfg.projectId) IT_VISION_CONFIG.SUPABASE_PROJECT_ID = cfg.projectId;
@@ -289,43 +290,77 @@ async function uploadMediaToGoogleDrive(file, onStatusUpdate, onProgress) {
           return;
         }
 
-        // Determine upload endpoint: use local proxy if hosted by server.js to prevent CORS errors
-        const useServerProxy = isServerHostedEnvironment();
-        const uploadEndpoint = useServerProxy ? "/api/upload-media" : IT_VISION_CONFIG.MEDIA_UPLOAD_ENDPOINT;
+        // Check whether genuine server.js backend is active before using /api/upload-media proxy
+        await initSupabaseAsync();
 
-        const xhrResult = await new Promise((xhrResolve, xhrReject) => {
-          const xhr = new XMLHttpRequest();
-          xhr.open("POST", uploadEndpoint, true);
-          xhr.setRequestHeader("Content-Type", useServerProxy ? "application/json" : "text/plain;charset=utf-8");
+        const sendXhrUpload = (endpoint, contentType, bodyStr) => {
+          return new Promise((xhrResolve, xhrReject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open("POST", endpoint, true);
+            xhr.setRequestHeader("Content-Type", contentType);
 
-          xhr.upload.onprogress = function(ev) {
-            if (ev.lengthComputable && ev.total > 0) {
-              const pct = 20 + Math.round((ev.loaded / ev.total) * 65);
-              emitProgress(pct, `Uploading ${file.name}... ${Math.round((ev.loaded / ev.total) * 100)}%`);
+            xhr.upload.onprogress = function(ev) {
+              if (ev.lengthComputable && ev.total > 0) {
+                const pct = 20 + Math.round((ev.loaded / ev.total) * 65);
+                emitProgress(pct, `Uploading ${file.name}... ${Math.round((ev.loaded / ev.total) * 100)}%`);
+              }
+            };
+
+            xhr.upload.onload = function() {
+              emitProgress(90, `Saving ${file.name} to Google Drive...`);
+            };
+
+            xhr.onreadystatechange = function() {
+              if (xhr.readyState !== 4) return;
+              let parsed = null;
+              try {
+                parsed = JSON.parse(xhr.responseText);
+              } catch (_) {
+                const parseErr = new Error(`Upload endpoint returned HTTP ${xhr.status} (invalid JSON).`);
+                parseErr.httpStatus = xhr.status;
+                parseErr.isInvalidJson = true;
+                return xhrReject(parseErr);
+              }
+              xhrResolve({ ok: xhr.status >= 200 && xhr.status < 300, status: xhr.status, result: parsed });
+            };
+
+            xhr.onerror = function() {
+              const netErr = new Error("Network error during media upload.");
+              netErr.httpStatus = 0;
+              xhrReject(netErr);
+            };
+
+            xhr.send(bodyStr);
+          });
+        };
+
+        const bodyJson = JSON.stringify(payload);
+        let xhrResult;
+
+        if (serverBackendAvailable) {
+          try {
+            xhrResult = await sendXhrUpload("/api/upload-media", "application/json", bodyJson);
+          } catch (proxyErr) {
+            // If static host / proxy returned 404 or non-JSON HTML, seamlessly upload directly to Google Apps Script
+            if (proxyErr.httpStatus === 404 || proxyErr.isInvalidJson || proxyErr.httpStatus === 0) {
+              emitProgress(25, `Uploading ${file.name} directly to Google Drive script...`);
+              xhrResult = await sendXhrUpload(
+                IT_VISION_CONFIG.MEDIA_UPLOAD_ENDPOINT,
+                "text/plain;charset=utf-8",
+                bodyJson
+              );
+            } else {
+              throw proxyErr;
             }
-          };
-
-          xhr.upload.onload = function() {
-            emitProgress(90, `Saving ${file.name} to Google Drive...`);
-          };
-
-          xhr.onreadystatechange = function() {
-            if (xhr.readyState !== 4) return;
-            let parsed = null;
-            try {
-              parsed = JSON.parse(xhr.responseText);
-            } catch (_) {
-              return xhrReject(new Error(`Upload endpoint returned HTTP ${xhr.status} (invalid JSON).`));
-            }
-            xhrResolve({ ok: xhr.status >= 200 && xhr.status < 300, status: xhr.status, result: parsed });
-          };
-
-          xhr.onerror = function() {
-            xhrReject(new Error("Network error during media upload."));
-          };
-
-          xhr.send(JSON.stringify(payload));
-        });
+          }
+        } else {
+          // Direct upload to Google Apps Script doPost(e) using simple-request CORS Content-Type
+          xhrResult = await sendXhrUpload(
+            IT_VISION_CONFIG.MEDIA_UPLOAD_ENDPOINT,
+            "text/plain;charset=utf-8",
+            bodyJson
+          );
+        }
 
         const { ok, status, result } = xhrResult;
 

@@ -532,11 +532,21 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
-  // 5. API Proxy Route for Google Drive Media Uploads
+  // 5. API Proxy Route for Google Drive Media Uploads (supports JSON and Form URL-Encoded)
   if (pathname === '/api/upload-media' && req.method === 'POST') {
     try {
       const body = await readRequestBody(req, 100 * 1024 * 1024);
-      const payload = JSON.parse(body);
+      let payload;
+      if (req.headers['content-type'] && req.headers['content-type'].includes('application/x-www-form-urlencoded')) {
+        const params = new URLSearchParams(body);
+        payload = {
+          base64: params.get('base64') || params.get('data') || '',
+          filename: params.get('filename') || '',
+          mimeType: params.get('mimeType') || ''
+        };
+      } else {
+        payload = JSON.parse(body);
+      }
       let base64 = payload.base64 || '';
       if (base64.indexOf('base64,') !== -1) {
         base64 = base64.split('base64,')[1];

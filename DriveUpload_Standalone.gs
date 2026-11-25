@@ -58,31 +58,36 @@ function doGet(e) {
 
 /**
  * HTTP POST: Handles media uploads (Photos, Videos, Audios) from web app / REST client
+ * Supports both Form URL-Encoded (e.parameter) and JSON (e.postData.contents) payloads
  */
 function doPost(e) {
   try {
-    var payload = {};
-    if (e && e.postData && e.postData.contents) {
-      try {
-        payload = JSON.parse(e.postData.contents);
-      } catch (parseErr) {
-        payload = e.parameter || {};
+    var base64Data = "";
+    var fileName = "";
+    var mimeType = "";
+
+    // 1. Form URL-Encoded parameters (e.parameter)
+    if (e && e.parameter && (e.parameter.base64 || e.parameter.data)) {
+      base64Data = e.parameter.base64 || e.parameter.data;
+      fileName = e.parameter.filename || ("Media_" + Date.now() + ".jpg");
+      mimeType = e.parameter.mimeType || inferMimeTypeFromName(fileName);
+    }
+    // 2. JSON payload (e.postData.contents)
+    else if (e && e.postData && e.postData.contents) {
+      var payload = JSON.parse(e.postData.contents);
+      if (payload && payload.action === "ping") {
+        return ContentService.createTextOutput(JSON.stringify({
+          status: "ok",
+          success: true,
+          doPostReady: true,
+          targetFolderId: TARGET_FOLDER_ID
+        })).setMimeType(ContentService.MimeType.JSON);
       }
-    } else if (e && e.parameter) {
-      payload = e.parameter;
+      base64Data = payload.base64 || payload.data || payload.file;
+      fileName = payload.filename || ("Media_" + Date.now() + ".jpg");
+      mimeType = payload.mimeType || inferMimeTypeFromName(fileName);
     }
 
-    if (payload.action === "ping") {
-      return ContentService.createTextOutput(JSON.stringify({
-        status: "ok",
-        success: true,
-        doPostReady: true,
-        targetFolderId: TARGET_FOLDER_ID,
-        timestamp: new Date().toISOString()
-      })).setMimeType(ContentService.MimeType.JSON);
-    }
-
-    var base64Data = payload.base64 || payload.data || payload.file;
     if (!base64Data) {
       return ContentService.createTextOutput(JSON.stringify({
         status: "error",
@@ -91,10 +96,7 @@ function doPost(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    var fileName = payload.filename || ("itv_media_" + Date.now());
-    var mimeType = payload.mimeType || "";
     var uploadResult = uploadPhoto(base64Data, fileName, mimeType);
-
     return ContentService.createTextOutput(JSON.stringify(uploadResult))
       .setMimeType(ContentService.MimeType.JSON);
 

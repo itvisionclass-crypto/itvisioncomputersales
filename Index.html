@@ -1881,49 +1881,6 @@
             </button>
           </div>
 
-          <!-- Supabase Connection & Anon Key Configuration Card -->
-          <div id="supabase-connection-card" style="margin-bottom:16px; padding:12px 16px; background:#F8FAFC; border:1px solid #CBD5E1; border-radius:8px; display:flex; flex-direction:column; gap:10px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-              <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                <span id="supabase-status-dot" style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#EF4444;"></span>
-                <strong id="supabase-status-text" style="font-size:13px; color:var(--color-primary-navy);">Supabase: Checking connection...</strong>
-                <span style="font-size:11px; background:#E2E8F0; padding:2px 6px; border-radius:4px; font-family:monospace; color:#334155;">mztnzrpfpszfieooeprj</span>
-                <span id="supabase-env-badge" style="display:none; font-size:10px; background:#DCFCE7; color:#15803D; font-weight:700; padding:2px 7px; border-radius:4px;">🔒 .env Protected</span>
-              </div>
-              <a href="https://supabase.com/dashboard/project/mztnzrpfpszfieooeprj/settings/api" target="_blank" rel="noopener noreferrer" style="font-size:11px; color:var(--color-primary-navy); text-decoration:underline; font-weight:600;">
-                🔗 Open Supabase API Settings &rarr;
-              </a>
-            </div>
-
-            <!-- Actionable Setup Warning when public.products table is not yet created -->
-            <div id="supabase-schema-warning" style="display:none; padding:10px 12px; background:#FFFBEB; border:1px solid #F59E0B; border-radius:6px; font-size:12px; color:#92400E;">
-              <div style="font-weight:700; margin-bottom:4px;">⚠ Action Required Once: Table <code>public.products</code> does not exist in Supabase yet.</div>
-              <div style="margin-bottom:8px;">Your <code>.env</code> API keys connected cleanly! Now open Supabase SQL Editor and run <code>supabase_schema.sql</code> once to create the <code>products</code> table.</div>
-              <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                <button type="button" class="btn-bulk-step" style="background:#D97706; color:#FFFFFF; border:none; padding:5px 12px; height:auto; cursor:pointer;" onclick="copySupabaseSchemaSql()">
-                  📋 Copy supabase_schema.sql
-                </button>
-                <a href="https://supabase.com/dashboard/project/mztnzrpfpszfieooeprj/sql/new" target="_blank" rel="noopener noreferrer" class="btn-bulk-step" style="background:#FFFFFF; color:#0F4C81; border:1px solid #CBD5E1; padding:5px 12px; height:auto; text-decoration:none;">
-                  🔗 Open Supabase SQL Editor &rarr;
-                </a>
-              </div>
-            </div>
-
-            <div id="supabase-manual-key-row" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-              <input type="password" id="supabase-key-input" class="form-ctrl-sm" style="flex:1; min-width:240px; font-family:monospace; font-size:12px;" placeholder="Paste Supabase publishable / anon key (not needed on localhost .env)" oninput="handleSupabaseKeyInput(this.value)">
-              <button type="button" class="btn-bulk-step" style="background:var(--color-primary-navy); color:#fff; border:none; padding:6px 14px; height:auto; cursor:pointer;" onclick="saveAndConnectSupabaseKey()">
-                ✔ Save &amp; Connect Key
-              </button>
-              <button type="button" class="btn-bulk-step" style="background:#F1F5F9; color:#64748B; border:1px solid #CBD5E1; padding:6px 10px; height:auto; cursor:pointer;" onclick="clearSupabaseKey()">
-                Clear
-              </button>
-            </div>
-
-            <div id="supabase-connection-help" style="font-size:11px; color:#64748B; line-height:1.4;">
-              💡 <strong>Security:</strong> Private Supabase keys are loaded strictly server-side from <code>.env</code> when running on localhost.
-            </div>
-          </div>
-
           <!-- Product Entry Form with Integrated Google Drive Media Upload & Autodetect -->
           <form id="admin-product-form" onsubmit="handleSaveProductToSupabase(event)" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-bottom:20px; background:var(--color-bg-subtle); padding:16px; border-radius:8px;">
             <div class="form-group-sm">
@@ -3072,9 +3029,6 @@
         `;
       }
 
-      // Update Supabase connection status badge
-      updateSupabaseStatusUI();
-
       // Hydrate Supabase Products Table
       refreshSupabaseProductsTable();
     }
@@ -3246,8 +3200,7 @@
       } catch (err) {
         console.warn("Supabase cloud save exception:", err.message);
         if (err && err.tableMissing) {
-          updateSupabaseStatusUI();
-          alert("⚠ Table 'public.products' does not exist in Supabase yet!\n\nClick 'Copy supabase_schema.sql' in the Supabase Connection bar above, open Supabase SQL Editor, paste it, and click Run. Your product is kept safely in your local session for now.");
+          alert("⚠ Table 'public.products' does not exist in Supabase yet!\n\nOpen your Supabase SQL Editor, paste supabase_schema.sql, and click Run. Your product is kept in your local session for now.");
         } else {
           alert("Notice: " + err.message + "\n\nProduct saved locally in your active session.");
         }
@@ -3385,134 +3338,6 @@
     }
 
     /**
-     * Supabase API Key & Connection Management
-     */
-    async function updateSupabaseStatusUI() {
-      var dot = document.getElementById("supabase-status-dot");
-      var text = document.getElementById("supabase-status-text");
-      var envBadge = document.getElementById("supabase-env-badge");
-      var manualRow = document.getElementById("supabase-manual-key-row");
-      var schemaWarn = document.getElementById("supabase-schema-warning");
-      var keyInput = document.getElementById("supabase-key-input");
-      var savedKey = localStorage.getItem("ITV_SUPABASE_ANON_KEY") || "";
-
-      if (keyInput && !keyInput.value && savedKey) {
-        keyInput.value = savedKey;
-      }
-
-      if (window.ITVisionSupabase && typeof window.ITVisionSupabase.initAsync === "function") {
-        try {
-          await window.ITVisionSupabase.initAsync();
-        } catch (_) {}
-      }
-
-      var isServerBacked = window.ITVisionSupabase &&
-        typeof window.ITVisionSupabase.isServerBacked === "function" &&
-        window.ITVisionSupabase.isServerBacked();
-
-      var isConnected = window.ITVisionSupabase &&
-        typeof window.ITVisionSupabase.isConnected === "function" &&
-        window.ITVisionSupabase.isConnected();
-
-      if (envBadge && envBadge.style) {
-        envBadge.style.display = isServerBacked ? "inline-block" : "none";
-      }
-      if (manualRow && manualRow.style) {
-        manualRow.style.display = isServerBacked ? "none" : "flex";
-      }
-
-      if (isConnected) {
-        if (dot && dot.style) dot.style.background = "#16A34A";
-        if (text) {
-          text.innerText = isServerBacked
-            ? "Supabase: Connected Safely via .env (mztnzrpfpszfieooeprj)"
-            : "Supabase: Connected (mztnzrpfpszfieooeprj)";
-          if (text.style) text.style.color = "#16A34A";
-        }
-
-        if (window.ITVisionSupabase && typeof window.ITVisionSupabase.checkHealth === "function") {
-          try {
-            var health = await window.ITVisionSupabase.checkHealth();
-            if (health && health.tableMissing) {
-              if (dot && dot.style) dot.style.background = "#D97706";
-              if (text) {
-                text.innerText = "Supabase: .env Connected — Create 'products' Table Next";
-                if (text.style) text.style.color = "#D97706";
-              }
-              if (schemaWarn && schemaWarn.style) schemaWarn.style.display = "block";
-            } else if (schemaWarn && schemaWarn.style) {
-              schemaWarn.style.display = "none";
-            }
-          } catch (_) {}
-        }
-      } else {
-        if (dot && dot.style) dot.style.background = "#EF4444";
-        if (text) {
-          text.innerText = "Supabase: Disconnected (Key Needed)";
-          if (text.style) text.style.color = "#0F4C81";
-        }
-        if (schemaWarn && schemaWarn.style) schemaWarn.style.display = "none";
-      }
-    }
-
-    async function copySupabaseSchemaSql() {
-      try {
-        var res = await fetch("/supabase_schema.sql");
-        if (!res.ok) throw new Error("Unable to load supabase_schema.sql");
-        var sqlText = await res.text();
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          await navigator.clipboard.writeText(sqlText);
-          alert("✔ supabase_schema.sql copied to clipboard!\n\nNow click 'Open Supabase SQL Editor', paste (Ctrl+V), and click Run.");
-        } else {
-          window.prompt("Copy SQL below and run it in Supabase SQL Editor:", sqlText);
-        }
-      } catch (err) {
-        alert("Open supabase_schema.sql in your project folder and run it in Supabase SQL Editor.");
-      }
-    }
-
-    function handleSupabaseKeyInput(val) {
-      if (val && val.trim().length > 20) {
-        if (window.ITVisionSupabase && window.ITVisionSupabase.setAnonKey) {
-          window.ITVisionSupabase.setAnonKey(val.trim());
-          updateSupabaseStatusUI();
-        }
-      }
-    }
-
-    function saveAndConnectSupabaseKey() {
-      var input = document.getElementById("supabase-key-input");
-      var key = input ? input.value.trim() : "";
-      if (!key) {
-        alert("Please paste your Supabase anon public key (found in Supabase Dashboard -> Project Settings -> API).");
-        return;
-      }
-
-      if (window.ITVisionSupabase && window.ITVisionSupabase.setAnonKey) {
-        var success = window.ITVisionSupabase.setAnonKey(key);
-        updateSupabaseStatusUI();
-        if (success) {
-          alert("✔ Connected to Supabase project mztnzrpfpszfieooeprj successfully!");
-          refreshSupabaseProductsTable();
-        } else {
-          alert("Key saved. Please ensure the key format is correct (eyJh...).");
-        }
-      }
-    }
-
-    function clearSupabaseKey() {
-      if (window.ITVisionSupabase && window.ITVisionSupabase.clearAnonKey) {
-        window.ITVisionSupabase.clearAnonKey();
-      }
-      var input = document.getElementById("supabase-key-input");
-      if (input) input.value = "";
-      updateSupabaseStatusUI();
-      alert("Supabase key cleared.");
-    }
-
-    window.updateSupabaseStatusUI = updateSupabaseStatusUI;
-
-    /**
      * Dedicated Page Routing Configuration
      * Handles separate views for: All Hardware, Combo Deals, Desktops (OptiPlex),
      * Refurb Laptops, Laser Printers, Toner Cartridges, CCTV & Security, Peripherals, and Repair Center.
@@ -3641,9 +3466,6 @@
       if (clean === "admin") {
         storeView.style.display = "none";
         adminView.classList.add("active");
-        if (typeof updateSupabaseStatusUI === "function") {
-          updateSupabaseStatusUI();
-        }
         var allNavs = document.querySelectorAll(".nav-item-btn");
         allNavs.forEach(b => b.classList.remove("active"));
         window.scrollTo(0, 0);

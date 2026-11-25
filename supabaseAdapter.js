@@ -18,7 +18,8 @@
 const IT_VISION_CONFIG = {
   SUPABASE_PROJECT_ID: "mztnzrpfpszfieooeprj",
   SUPABASE_URL: "https://mztnzrpfpszfieooeprj.supabase.co",
-  SUPABASE_ANON_KEY: (typeof localStorage !== "undefined" ? localStorage.getItem("ITV_SUPABASE_ANON_KEY") : "") || "",
+  // Browser-safe Supabase publishable key (governed by Row Level Security; private secret key remains strictly server-side in env vars)
+  SUPABASE_ANON_KEY: "sb_publishable_jlE51hoDjEw_Nd74IoHCuA_9_Ws5yAC",
   MEDIA_UPLOAD_ENDPOINT: "https://script.google.com/macros/s/AKfycbxRR30Z9eMtp6WntWzfIB8Bg52jPWXah-b4pDQsFeOR6fn0A6TqTmocbZSVFlE4Ip4noQ/exec"
 };
 
@@ -300,18 +301,18 @@ async function uploadMediaToGoogleDrive(file, onStatusUpdate, onProgress) {
             xhr.open("POST", endpoint, true);
             xhr.setRequestHeader("Content-Type", "application/json");
 
-            xhr.upload.onprogress = function(ev) {
+            xhr.upload.onprogress = function (ev) {
               if (ev.lengthComputable && ev.total > 0) {
                 const pct = 20 + Math.round((ev.loaded / ev.total) * 65);
                 emitProgress(pct, `Uploading ${file.name}... ${Math.round((ev.loaded / ev.total) * 100)}%`);
               }
             };
 
-            xhr.upload.onload = function() {
+            xhr.upload.onload = function () {
               emitProgress(90, `Saving ${file.name} to Google Drive...`);
             };
 
-            xhr.onreadystatechange = function() {
+            xhr.onreadystatechange = function () {
               if (xhr.readyState !== 4) return;
               let parsed = null;
               try {
@@ -325,7 +326,7 @@ async function uploadMediaToGoogleDrive(file, onStatusUpdate, onProgress) {
               xhrResolve({ ok: xhr.status >= 200 && xhr.status < 300, status: xhr.status, result: parsed });
             };
 
-            xhr.onerror = function() {
+            xhr.onerror = function () {
               const netErr = new Error("Network error during media upload.");
               netErr.httpStatus = 0;
               xhrReject(netErr);
@@ -529,22 +530,8 @@ async function saveSupabaseProduct(product) {
 
   if (!supabaseClient) initSupabase();
 
-  if (!supabaseClient && typeof window !== "undefined") {
-    const entered = window.prompt(
-      "Supabase Project: mztnzrpfpszfieooeprj\n\n" +
-      "To save products to your Supabase database, please paste your publishable/anon key:\n" +
-      "(Found in Supabase Dashboard -> Project Settings -> API)"
-    );
-    if (entered && entered.trim()) {
-      setSupabaseAnonKey(entered.trim());
-      if (typeof window.updateSupabaseStatusUI === "function") {
-        window.updateSupabaseStatusUI();
-      }
-    }
-  }
-
   if (!supabaseClient) {
-    throw new Error("Supabase client is not connected. Please paste your publishable/anon key in the Supabase Connection bar above.");
+    throw new Error("Supabase SDK failed to initialize with project publishable key.");
   }
 
   const { data, error } = await supabaseClient

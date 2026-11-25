@@ -1884,18 +1884,33 @@
           <!-- Supabase Connection & Anon Key Configuration Card -->
           <div id="supabase-connection-card" style="margin-bottom:16px; padding:12px 16px; background:#F8FAFC; border:1px solid #CBD5E1; border-radius:8px; display:flex; flex-direction:column; gap:10px;">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-              <div style="display:flex; align-items:center; gap:8px;">
+              <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                 <span id="supabase-status-dot" style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#EF4444;"></span>
-                <strong id="supabase-status-text" style="font-size:13px; color:var(--color-primary-navy);">Supabase: Disconnected (Anon Key Needed)</strong>
+                <strong id="supabase-status-text" style="font-size:13px; color:var(--color-primary-navy);">Supabase: Checking connection...</strong>
                 <span style="font-size:11px; background:#E2E8F0; padding:2px 6px; border-radius:4px; font-family:monospace; color:#334155;">mztnzrpfpszfieooeprj</span>
+                <span id="supabase-env-badge" style="display:none; font-size:10px; background:#DCFCE7; color:#15803D; font-weight:700; padding:2px 7px; border-radius:4px;">🔒 .env Protected</span>
               </div>
               <a href="https://supabase.com/dashboard/project/mztnzrpfpszfieooeprj/settings/api" target="_blank" rel="noopener noreferrer" style="font-size:11px; color:var(--color-primary-navy); text-decoration:underline; font-weight:600;">
                 🔗 Open Supabase API Settings &rarr;
               </a>
             </div>
 
-            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-              <input type="password" id="supabase-key-input" class="form-ctrl-sm" style="flex:1; min-width:240px; font-family:monospace; font-size:12px;" placeholder="Paste Supabase anon public key here (eyJh...)" oninput="handleSupabaseKeyInput(this.value)">
+            <!-- Actionable Setup Warning when public.products table is not yet created -->
+            <div id="supabase-schema-warning" style="display:none; padding:10px 12px; background:#FFFBEB; border:1px solid #F59E0B; border-radius:6px; font-size:12px; color:#92400E;">
+              <div style="font-weight:700; margin-bottom:4px;">⚠ Action Required Once: Table <code>public.products</code> does not exist in Supabase yet.</div>
+              <div style="margin-bottom:8px;">Your <code>.env</code> API keys connected cleanly! Now open Supabase SQL Editor and run <code>supabase_schema.sql</code> once to create the <code>products</code> table.</div>
+              <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <button type="button" class="btn-bulk-step" style="background:#D97706; color:#FFFFFF; border:none; padding:5px 12px; height:auto; cursor:pointer;" onclick="copySupabaseSchemaSql()">
+                  📋 Copy supabase_schema.sql
+                </button>
+                <a href="https://supabase.com/dashboard/project/mztnzrpfpszfieooeprj/sql/new" target="_blank" rel="noopener noreferrer" class="btn-bulk-step" style="background:#FFFFFF; color:#0F4C81; border:1px solid #CBD5E1; padding:5px 12px; height:auto; text-decoration:none;">
+                  🔗 Open Supabase SQL Editor &rarr;
+                </a>
+              </div>
+            </div>
+
+            <div id="supabase-manual-key-row" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+              <input type="password" id="supabase-key-input" class="form-ctrl-sm" style="flex:1; min-width:240px; font-family:monospace; font-size:12px;" placeholder="Paste Supabase publishable / anon key (not needed on localhost .env)" oninput="handleSupabaseKeyInput(this.value)">
               <button type="button" class="btn-bulk-step" style="background:var(--color-primary-navy); color:#fff; border:none; padding:6px 14px; height:auto; cursor:pointer;" onclick="saveAndConnectSupabaseKey()">
                 ✔ Save &amp; Connect Key
               </button>
@@ -1904,8 +1919,8 @@
               </button>
             </div>
 
-            <div style="font-size:11px; color:#64748B; line-height:1.4;">
-              💡 <strong>How to connect in 10 seconds:</strong> In your open Supabase Dashboard &rarr; Go to <strong>Project Settings</strong> (gear icon) &rarr; <strong>API</strong> &rarr; Copy the <strong><code>anon public</code></strong> key &rarr; Paste it here and click <strong>Save &amp; Connect Key</strong>.
+            <div id="supabase-connection-help" style="font-size:11px; color:#64748B; line-height:1.4;">
+              💡 <strong>Security:</strong> Private Supabase keys are loaded strictly server-side from <code>.env</code> when running on localhost.
             </div>
           </div>
 
@@ -2371,11 +2386,31 @@
     }
 
     /**
+     * Infer product category from SKU prefix or title/description so Supabase rows
+     * cleanly populate the separated category pages.
+     */
+    function inferProductCategory(p) {
+      if (p.category && p.category !== "Hardware") return p.category;
+      var text = ((p.id || "") + " " + (p.name || "") + " " + (p.description || "")).toLowerCase();
+      if (text.includes("itv-cmb") || text.includes("combo") || text.includes("package")) return "Combo";
+      if (text.includes("itv-dsk") || text.includes("optiplex") || text.includes("desktop") || text.includes("prodesk")) return "Desktop";
+      if (text.includes("itv-lap") || text.includes("laptop") || text.includes("thinkpad") || text.includes("latitude") || text.includes("elitebook")) return "Laptop";
+      if (text.includes("itv-prn") || text.includes("laserjet") || text.includes("printer")) return "Printer";
+      if (text.includes("itv-ton") || text.includes("12a") || text.includes("88a") || text.includes("toner") || text.includes("cartridge")) return "Cartridge";
+      if (text.includes("itv-sec") || text.includes("cctv") || text.includes("dvr") || text.includes("nvr") || text.includes("camera")) return "Security";
+      if (text.includes("itv-acc") || text.includes("keyboard") || text.includes("mouse") || text.includes("wi-fi") || text.includes("ssd") || text.includes("ram")) return "Accessories";
+      return "Hardware";
+    }
+
+    /**
      * Hydrate catalog from Supabase, sessionStorage, or Google Apps Script RPC
      */
     async function initCatalogData() {
-      // 1. Try Supabase first if connected
+      // 1. Bootstrap server .env Supabase connection and fetch live products
       try {
+        if (window.ITVisionSupabase && window.ITVisionSupabase.initAsync) {
+          await window.ITVisionSupabase.initAsync();
+        }
         if (window.ITVisionSupabase && window.ITVisionSupabase.fetchProducts) {
           var supaProducts = await window.ITVisionSupabase.fetchProducts();
           if (supaProducts && supaProducts.length > 0) {
@@ -2388,7 +2423,7 @@
                 price: Number(p.price),
                 selling_price: Number(p.price),
                 mrp_price: Math.round(Number(p.price) * 1.3),
-                category: "Hardware",
+                category: inferProductCategory(p),
                 condition: "Certified",
                 photos_link: p.photos_link,
                 description: p.description,
@@ -2397,7 +2432,8 @@
               };
             });
             sessionStorage.setItem("ITV_CATALOG_CACHE", JSON.stringify(window.ITVisionState.catalogCache));
-            renderProductGrid(window.ITVisionState.catalogCache);
+            var searchEl = document.getElementById("catalog-search-input");
+            executeCatalogSearch(searchEl ? searchEl.value : "");
             return;
           }
         }
@@ -3181,7 +3217,12 @@
         }
       } catch (err) {
         console.warn("Supabase cloud save exception:", err.message);
-        alert("Notice: " + err.message + "\n\nProduct saved locally in your active session. Connect your Supabase anon key in the connection bar above to sync to cloud.");
+        if (err && err.tableMissing) {
+          updateSupabaseStatusUI();
+          alert("⚠ Table 'public.products' does not exist in Supabase yet!\n\nClick 'Copy supabase_schema.sql' in the Supabase Connection bar above, open Supabase SQL Editor, paste it, and click Run. Your product is kept safely in your local session for now.");
+        } else {
+          alert("Notice: " + err.message + "\n\nProduct saved locally in your active session.");
+        }
       }
 
       // Update local catalog cache
@@ -3195,7 +3236,7 @@
         price: product.price,
         selling_price: product.price,
         mrp_price: Math.round(product.price * 1.35),
-        category: "Hardware",
+        category: inferProductCategory(product),
         condition: "Certified",
         photos_link: product.photos_link,
         description: product.description,
@@ -3309,9 +3350,12 @@
     /**
      * Supabase API Key & Connection Management
      */
-    function updateSupabaseStatusUI() {
+    async function updateSupabaseStatusUI() {
       var dot = document.getElementById("supabase-status-dot");
       var text = document.getElementById("supabase-status-text");
+      var envBadge = document.getElementById("supabase-env-badge");
+      var manualRow = document.getElementById("supabase-manual-key-row");
+      var schemaWarn = document.getElementById("supabase-schema-warning");
       var keyInput = document.getElementById("supabase-key-input");
       var savedKey = localStorage.getItem("ITV_SUPABASE_ANON_KEY") || "";
 
@@ -3319,22 +3363,74 @@
         keyInput.value = savedKey;
       }
 
-      var isConnected = window.ITVisionSupabase && 
-        typeof window.ITVisionSupabase.isConnected === "function" && 
+      if (window.ITVisionSupabase && typeof window.ITVisionSupabase.initAsync === "function") {
+        try {
+          await window.ITVisionSupabase.initAsync();
+        } catch (_) {}
+      }
+
+      var isServerBacked = window.ITVisionSupabase &&
+        typeof window.ITVisionSupabase.isServerBacked === "function" &&
+        window.ITVisionSupabase.isServerBacked();
+
+      var isConnected = window.ITVisionSupabase &&
+        typeof window.ITVisionSupabase.isConnected === "function" &&
         window.ITVisionSupabase.isConnected();
 
+      if (envBadge && envBadge.style) {
+        envBadge.style.display = isServerBacked ? "inline-block" : "none";
+      }
+      if (manualRow && manualRow.style) {
+        manualRow.style.display = isServerBacked ? "none" : "flex";
+      }
+
       if (isConnected) {
-        if (dot) dot.style.background = "#16A34A";
+        if (dot && dot.style) dot.style.background = "#16A34A";
         if (text) {
-          text.innerText = "Supabase: Connected (mztnzrpfpszfieooeprj)";
-          text.style.color = "#16A34A";
+          text.innerText = isServerBacked
+            ? "Supabase: Connected Safely via .env (mztnzrpfpszfieooeprj)"
+            : "Supabase: Connected (mztnzrpfpszfieooeprj)";
+          if (text.style) text.style.color = "#16A34A";
+        }
+
+        if (window.ITVisionSupabase && typeof window.ITVisionSupabase.checkHealth === "function") {
+          try {
+            var health = await window.ITVisionSupabase.checkHealth();
+            if (health && health.tableMissing) {
+              if (dot && dot.style) dot.style.background = "#D97706";
+              if (text) {
+                text.innerText = "Supabase: .env Connected — Create 'products' Table Next";
+                if (text.style) text.style.color = "#D97706";
+              }
+              if (schemaWarn && schemaWarn.style) schemaWarn.style.display = "block";
+            } else if (schemaWarn && schemaWarn.style) {
+              schemaWarn.style.display = "none";
+            }
+          } catch (_) {}
         }
       } else {
-        if (dot) dot.style.background = "#EF4444";
+        if (dot && dot.style) dot.style.background = "#EF4444";
         if (text) {
-          text.innerText = "Supabase: Disconnected (Anon Key Needed)";
-          text.style.color = "#0F4C81";
+          text.innerText = "Supabase: Disconnected (Key Needed)";
+          if (text.style) text.style.color = "#0F4C81";
         }
+        if (schemaWarn && schemaWarn.style) schemaWarn.style.display = "none";
+      }
+    }
+
+    async function copySupabaseSchemaSql() {
+      try {
+        var res = await fetch("/supabase_schema.sql");
+        if (!res.ok) throw new Error("Unable to load supabase_schema.sql");
+        var sqlText = await res.text();
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(sqlText);
+          alert("✔ supabase_schema.sql copied to clipboard!\n\nNow click 'Open Supabase SQL Editor', paste (Ctrl+V), and click Run.");
+        } else {
+          window.prompt("Copy SQL below and run it in Supabase SQL Editor:", sqlText);
+        }
+      } catch (err) {
+        alert("Open supabase_schema.sql in your project folder and run it in Supabase SQL Editor.");
       }
     }
 

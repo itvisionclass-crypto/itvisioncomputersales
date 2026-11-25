@@ -5,8 +5,36 @@ const path = require('path');
 const { URL } = require('url');
 
 const PORT = process.env.PORT || 3000;
-const BASE_DIR = __dirname;
+const BASE_DIR = path.resolve(__dirname);
 const UPLOADS_DIR = path.join(BASE_DIR, 'uploads');
+
+/**
+ * Load private environment variables from local .env file without external dependencies.
+ */
+function loadDotEnv(envFilePath) {
+  if (!fs.existsSync(envFilePath)) return;
+  try {
+    const raw = fs.readFileSync(envFilePath, 'utf8');
+    raw.split(/\r?\n/).forEach((line) => {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) return;
+      const eqIdx = trimmed.indexOf('=');
+      if (eqIdx === -1) return;
+      const key = trimmed.slice(0, eqIdx).trim();
+      let val = trimmed.slice(eqIdx + 1).trim();
+      if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+        val = val.slice(1, -1);
+      }
+      if (key && !(key in process.env)) {
+        process.env[key] = val;
+      }
+    });
+  } catch (err) {
+    console.warn('[ENV] Failed to parse .env file:', err.message);
+  }
+}
+
+loadDotEnv(path.join(BASE_DIR, '.env'));
 
 // Ensure uploads directory exists
 if (!fs.existsSync(UPLOADS_DIR)) {
@@ -39,13 +67,113 @@ const MIME_TYPES = {
 };
 
 /**
+ * Retrieve Supabase environment configuration strictly on the server.
+ */
+function getSupabaseEnv() {
+  const url = (process.env.SUPABASE_URL || '').replace(/\/+$/, '');
+  const publishableKey = process.env.SUPABASE_PUBLISHABLE_KEY || '';
+  const secretKey = process.env.SUPABASE_SECRET_KEY || '';
+  const jwksUrl = process.env.SUPABASE_JWKS_URL || '';
+  let projectId = '';
+  try {
+    if (url) {
+      projectId = new URL(url).hostname.split('.')[0] || '';
+    }
+  } catch (_) {}
+  return { url, publishableKey, secretKey, jwksUrl, projectId };
+}
+
+function setCors(res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+}
+
+function sendJson(res, statusCode, payload) {
+  setCors(res);
+  res.writeHead(statusCode, {
+    'Content-Type': 'application/json',
+    'Cache-Control': 'no-store'
+  });
+  res.end(JSON.stringify(payload));
+}
+
+function readRequestBody(req, maxBytes = 1024 * 1024) {
+  return new Promise((resolve, reject) => {
+    let body = '';
+    req.on('data', (chunk) => {
+      body += chunk;
+      if (body.length > maxBytes) {
+        req.destroy();
+        reject(new Error('Request payload exceeds maximum allowed size.'));
+      }
+    });
+    req.on('end', () => resolve(body));
+    req.on('error', reject);
+  });
+}
+
+/**
+ * Perform an authenticated HTTPS request to Supabase PostgREST API using server-side .env keys.
+ * Uses the `apikey` header required by Supabase sb_publishable_ / sb_secret_ key format.
+ */
+function supabaseRestRequest({ method, restPath, bodyObj = null, useSecret = true, prefer = null }) {
+  return new Promise((resolve, reject) => {
+    const cfg = getSupabaseEnv();
+    const apiKey = useSecret ? (cfg.secretKey || cfg.publishableKey) : cfg.publishableKey;
+    if (!cfg.url || !apiKey) {
+      return reject(new Error('Supabase credentials are missing from .env file.'));
+    }
+
+    const target = new URL(`${cfg.url}/rest/v1${restPath}`);
+    const bodyStr = bodyObj !== null ? JSON.stringify(bodyObj) : null;
+    const headers = {
+      'apikey': apiKey,
+      'Accept': 'application/json'
+    };
+
+    if (bodyStr !== null) {
+      headers['Content-Type'] = 'application/json';
+      headers['Content-Length'] = Buffer.byteLength(bodyStr);
+    }
+    if (prefer) {
+      headers['Prefer'] = prefer;
+    }
+
+    const req = https.request({
+      hostname: target.hostname,
+      port: target.port || 443,
+      path: target.pathname + target.search,
+      method,
+      headers
+    }, (supaRes) => {
+      let raw = '';
+      supaRes.on('data', (c) => { raw += c; });
+      supaRes.on('end', () => {
+        let data = null;
+        try {
+          data = raw ? JSON.parse(raw) : null;
+        } catch (_) {
+          data = null;
+        }
+        resolve({ statusCode: supaRes.statusCode, data, raw });
+      });
+    });
+
+    req.on('error', reject);
+    if (bodyStr !== null) req.write(bodyStr);
+    req.end();
+  });
+}
+
+/**
  * Forward upload payload to Google Apps Script Web App
  * Follows 302/301 redirects to retrieve JSON response from Google CDN
  */
 function forwardToGoogleAppsScript(payload) {
   return new Promise((resolve, reject) => {
     const postData = JSON.stringify(payload);
-    
+
     function sendRequest(targetUrl, method, data) {
       try {
         const parsed = new URL(targetUrl);
@@ -64,7 +192,6 @@ function forwardToGoogleAppsScript(payload) {
         }
 
         const req = https.request(options, (res) => {
-          // Follow HTTP redirects (301, 302, 303, 307)
           if ([301, 302, 303, 307].includes(res.statusCode) && res.headers.location) {
             return sendRequest(res.headers.location, 'GET', null);
           }
@@ -72,7 +199,6 @@ function forwardToGoogleAppsScript(payload) {
           let responseBody = '';
           res.on('data', chunk => { responseBody += chunk; });
           res.on('end', () => {
-            // Check if response is JSON
             try {
               const parsedJson = JSON.parse(responseBody);
               resolve({ statusCode: res.statusCode, data: parsedJson });
@@ -82,13 +208,8 @@ function forwardToGoogleAppsScript(payload) {
           });
         });
 
-        req.on('error', (err) => {
-          reject(err);
-        });
-
-        if (data) {
-          req.write(data);
-        }
+        req.on('error', reject);
+        if (data) req.write(data);
         req.end();
       } catch (err) {
         reject(err);
@@ -111,123 +232,262 @@ function saveFileLocally(filename, base64Content) {
 }
 
 const server = http.createServer(async (req, res) => {
-  // Common CORS headers
-  const setCors = () => {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  };
-
   if (req.method === 'OPTIONS') {
-    setCors();
+    setCors(res);
     res.writeHead(204);
     res.end();
     return;
   }
 
-  // API Proxy Route for Media Uploads
-  if (req.url === '/api/upload-media' && req.method === 'POST') {
-    setCors();
-    let body = '';
-    req.on('data', chunk => {
-      body += chunk;
-      // Protection against absurdly huge uploads (> 50MB)
-      if (body.length > 50 * 1024 * 1024) {
-        req.destroy();
-      }
+  const reqUrl = new URL(req.url, `http://localhost:${PORT}`);
+  const pathname = reqUrl.pathname;
+
+  // 1. Safe Public Supabase Config (NEVER returns SUPABASE_SECRET_KEY)
+  if (pathname === '/api/supabase/config' && req.method === 'GET') {
+    const cfg = getSupabaseEnv();
+    return sendJson(res, 200, {
+      success: true,
+      connected: Boolean(cfg.url && (cfg.publishableKey || cfg.secretKey)),
+      mode: 'server_env',
+      projectId: cfg.projectId,
+      url: cfg.url,
+      publishableKey: cfg.publishableKey,
+      hasSecretKey: Boolean(cfg.secretKey),
+      hasJwksUrl: Boolean(cfg.jwksUrl)
     });
+  }
 
-    req.on('end', async () => {
-      try {
-        const payload = JSON.parse(body);
-        let base64 = payload.base64 || '';
-        if (base64.indexOf('base64,') !== -1) {
-          base64 = base64.split('base64,')[1];
-        }
+  // 2. Supabase Live Connection & Schema Health Check
+  if (pathname === '/api/supabase/health' && req.method === 'GET') {
+    const cfg = getSupabaseEnv();
+    if (!cfg.url || (!cfg.secretKey && !cfg.publishableKey)) {
+      return sendJson(res, 500, {
+        success: false,
+        authValid: false,
+        tableExists: false,
+        tableMissing: true,
+        message: 'Supabase keys are not configured in .env.'
+      });
+    }
 
-        const filename = payload.filename || ('media_' + Date.now() + '.jpg');
-        const mimeType = payload.mimeType || 'application/octet-stream';
+    try {
+      const rootRes = await supabaseRestRequest({ method: 'GET', restPath: '/', useSecret: true });
+      const authValid = rootRes.statusCode >= 200 && rootRes.statusCode < 300;
+      const tblRes = await supabaseRestRequest({
+        method: 'GET',
+        restPath: '/products?select=id&limit=1',
+        useSecret: true
+      });
+      const tableExists = tblRes.statusCode >= 200 && tblRes.statusCode < 300;
+      const tableMissing = !tableExists && tblRes.data && tblRes.data.code === 'PGRST205';
 
-        // 1. Try forwarding to Google Apps Script
-        let gasSuccess = false;
-        let gasResult = null;
+      return sendJson(res, 200, {
+        success: authValid && tableExists,
+        authValid,
+        tableExists,
+        tableMissing,
+        projectId: cfg.projectId,
+        message: tableExists
+          ? `Connected to Supabase (${cfg.projectId}) and public.products table is ready.`
+          : tableMissing
+            ? `Supabase API keys in .env authenticated cleanly, but table 'public.products' does not exist yet. Run supabase_schema.sql in Supabase SQL Editor.`
+            : (tblRes.data && tblRes.data.message) || `Supabase returned status ${tblRes.statusCode}`
+      });
+    } catch (err) {
+      return sendJson(res, 502, {
+        success: false,
+        authValid: false,
+        tableExists: false,
+        tableMissing: false,
+        message: err.message
+      });
+    }
+  }
 
-        try {
-          const gasRes = await forwardToGoogleAppsScript({
-            filename: filename,
-            mimeType: mimeType,
-            base64: base64
-          });
-
-          if (gasRes && gasRes.data && (gasRes.data.success || gasRes.data.status === 'success' || gasRes.data.fileUrl || gasRes.data.directUrl)) {
-            gasSuccess = true;
-            gasResult = gasRes.data;
-          } else {
-            console.warn('[Upload Proxy] Google Apps Script response:', gasRes.data || (gasRes.rawBody ? gasRes.rawBody.slice(0, 200) : 'No response'));
-          }
-        } catch (gasErr) {
-          console.warn('[Upload Proxy] Google Apps Script connection error:', gasErr.message);
-        }
-
-        // If Google Apps Script returned a valid file URL
-        if (gasSuccess && gasResult) {
-          const fileId = gasResult.fileId || '';
-          const directUrl = gasResult.directUrl || (fileId ? `https://lh3.googleusercontent.com/d/${fileId}=w800-rw` : gasResult.url || gasResult.fileUrl);
-          
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({
-            status: 'success',
+  // 3. Server-Side Supabase Products Endpoint (GET / POST / DELETE)
+  if (pathname === '/api/supabase/products') {
+    try {
+      if (req.method === 'GET') {
+        const supaRes = await supabaseRestRequest({
+          method: 'GET',
+          restPath: '/products?select=id,name,price,photos_link,description,available_pcs&order=price.desc',
+          useSecret: true
+        });
+        if (supaRes.statusCode >= 200 && supaRes.statusCode < 300) {
+          return sendJson(res, 200, {
             success: true,
-            source: 'google_drive',
-            fileId: fileId,
-            filename: filename,
-            fileUrl: gasResult.fileUrl || gasResult.url || directUrl,
-            directUrl: directUrl,
-            message: 'Uploaded directly to Google Drive folder 1E2MflyKllRq2a5kiZmFargIe5PvA8_X6'
-          }));
-          return;
+            products: Array.isArray(supaRes.data) ? supaRes.data : []
+          });
+        }
+        const tableMissing = supaRes.data && supaRes.data.code === 'PGRST205';
+        return sendJson(res, supaRes.statusCode || 502, {
+          success: false,
+          tableMissing,
+          code: supaRes.data && supaRes.data.code,
+          error: (supaRes.data && supaRes.data.message) || 'Failed to fetch products from Supabase.'
+        });
+      }
+
+      if (req.method === 'POST') {
+        const rawBody = await readRequestBody(req);
+        const product = JSON.parse(rawBody);
+        if (!product || !product.id || !product.name || isNaN(Number(product.price))) {
+          return sendJson(res, 400, {
+            success: false,
+            error: 'Invalid product payload: id, name, and numeric price are required.'
+          });
         }
 
-        // 2. Fallback: Save file locally on server
-        console.log(`[Upload Proxy] Saving ${filename} locally to /uploads/...`);
-        const savedName = saveFileLocally(filename, base64);
-        const localUrl = `http://localhost:${PORT}/uploads/${savedName}`;
+        const payload = {
+          id: String(product.id).trim(),
+          name: String(product.name).trim(),
+          price: Number(product.price),
+          photos_link: product.photos_link ? String(product.photos_link).trim() : '',
+          description: product.description ? String(product.description).trim() : '',
+          available_pcs: parseInt(product.available_pcs, 10) || 0,
+          updated_at: new Date().toISOString()
+        };
 
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({
+        const supaRes = await supabaseRestRequest({
+          method: 'POST',
+          restPath: '/products?on_conflict=id',
+          bodyObj: payload,
+          useSecret: true,
+          prefer: 'resolution=merge-duplicates,return=representation'
+        });
+
+        if (supaRes.statusCode >= 200 && supaRes.statusCode < 300) {
+          return sendJson(res, 200, { success: true, data: supaRes.data });
+        }
+        const tableMissing = supaRes.data && supaRes.data.code === 'PGRST205';
+        return sendJson(res, supaRes.statusCode || 502, {
+          success: false,
+          tableMissing,
+          code: supaRes.data && supaRes.data.code,
+          error: tableMissing
+            ? "Table 'public.products' does not exist in Supabase yet. Run supabase_schema.sql in Supabase SQL Editor."
+            : (supaRes.data && supaRes.data.message) || 'Failed to save product to Supabase.'
+        });
+      }
+
+      if (req.method === 'DELETE') {
+        let productId = reqUrl.searchParams.get('id');
+        if (!productId) {
+          try {
+            const rawBody = await readRequestBody(req);
+            if (rawBody) productId = JSON.parse(rawBody).id;
+          } catch (_) {}
+        }
+        if (!productId) {
+          return sendJson(res, 400, { success: false, error: 'Missing product id for deletion.' });
+        }
+
+        const supaRes = await supabaseRestRequest({
+          method: 'DELETE',
+          restPath: `/products?id=eq.${encodeURIComponent(productId)}`,
+          useSecret: true,
+          prefer: 'return=representation'
+        });
+
+        if (supaRes.statusCode >= 200 && supaRes.statusCode < 300) {
+          return sendJson(res, 200, { success: true, data: supaRes.data });
+        }
+        return sendJson(res, supaRes.statusCode || 502, {
+          success: false,
+          error: (supaRes.data && supaRes.data.message) || 'Failed to delete product from Supabase.'
+        });
+      }
+
+      return sendJson(res, 405, { success: false, error: 'Method not allowed.' });
+    } catch (err) {
+      return sendJson(res, 500, { success: false, error: err.message });
+    }
+  }
+
+  // 4. API Proxy Route for Google Drive Media Uploads
+  if (pathname === '/api/upload-media' && req.method === 'POST') {
+    try {
+      const body = await readRequestBody(req, 50 * 1024 * 1024);
+      const payload = JSON.parse(body);
+      let base64 = payload.base64 || '';
+      if (base64.indexOf('base64,') !== -1) {
+        base64 = base64.split('base64,')[1];
+      }
+
+      const filename = payload.filename || ('media_' + Date.now() + '.jpg');
+      const mimeType = payload.mimeType || 'application/octet-stream';
+
+      let gasSuccess = false;
+      let gasResult = null;
+
+      try {
+        const gasRes = await forwardToGoogleAppsScript({ filename, mimeType, base64 });
+        if (gasRes && gasRes.data && (gasRes.data.success || gasRes.data.status === 'success' || gasRes.data.fileUrl || gasRes.data.directUrl)) {
+          gasSuccess = true;
+          gasResult = gasRes.data;
+        } else {
+          console.warn('[Upload Proxy] Google Apps Script response:', gasRes.data || (gasRes.rawBody ? gasRes.rawBody.slice(0, 200) : 'No response'));
+        }
+      } catch (gasErr) {
+        console.warn('[Upload Proxy] Google Apps Script connection error:', gasErr.message);
+      }
+
+      if (gasSuccess && gasResult) {
+        const fileId = gasResult.fileId || '';
+        const directUrl = gasResult.directUrl || (fileId ? `https://lh3.googleusercontent.com/d/${fileId}=w800-rw` : gasResult.url || gasResult.fileUrl);
+        return sendJson(res, 200, {
           status: 'success',
           success: true,
-          source: 'local_storage',
-          filename: savedName,
-          fileUrl: localUrl,
-          directUrl: localUrl,
-          warning: 'Saved locally on server. To store in Google Drive, deploy the updated Code.gs in Google Apps Script.',
-          instructions: 'Deploy Code.gs in script.google.com as New Version.'
-        }));
-
-      } catch (err) {
-        console.error('[Upload Proxy] Error:', err);
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({
-          status: 'error',
-          success: false,
-          error: err.message
-        }));
+          source: 'google_drive',
+          fileId,
+          filename,
+          fileUrl: gasResult.fileUrl || gasResult.url || directUrl,
+          directUrl,
+          message: 'Uploaded directly to Google Drive folder 1E2MflyKllRq2a5kiZmFargIe5PvA8_X6'
+        });
       }
-    });
+
+      console.log(`[Upload Proxy] Saving ${filename} locally to /uploads/...`);
+      const savedName = saveFileLocally(filename, base64);
+      const localUrl = `http://localhost:${PORT}/uploads/${savedName}`;
+
+      return sendJson(res, 200, {
+        status: 'success',
+        success: true,
+        source: 'local_storage',
+        filename: savedName,
+        fileUrl: localUrl,
+        directUrl: localUrl,
+        warning: 'Saved locally on server. To store in Google Drive, deploy the updated Code.gs in Google Apps Script.',
+        instructions: 'Deploy Code.gs in script.google.com as New Version.'
+      });
+    } catch (err) {
+      console.error('[Upload Proxy] Error:', err);
+      return sendJson(res, 500, { status: 'error', success: false, error: err.message });
+    }
+  }
+
+  // 5. Static File Serving (with strict protection blocking .env & dotfiles)
+  let cleanPath = pathname === '/' || pathname === '' ? '/Index.html' : pathname;
+  let decodedPath;
+  try {
+    decodedPath = decodeURIComponent(cleanPath);
+  } catch (_) {
+    res.writeHead(400, { 'Content-Type': 'text/plain' });
+    res.end('400 Bad Request');
     return;
   }
 
-  // Static File Serving
-  let parsedUrl = req.url.split('?')[0];
-  if (parsedUrl === '/' || parsedUrl === '') {
-    parsedUrl = '/Index.html';
+  // Block hidden files/folders such as .env, .env.example, .git, .gsd
+  const segments = decodedPath.split(/[\\/]+/).filter(Boolean);
+  if (segments.some((seg) => seg.startsWith('.'))) {
+    res.writeHead(403, { 'Content-Type': 'text/plain' });
+    res.end('403 Forbidden: Private files are protected.');
+    return;
   }
 
-  let filePath = path.join(BASE_DIR, decodeURIComponent(parsedUrl));
-
-  // Security check: stay within BASE_DIR
-  if (!filePath.startsWith(BASE_DIR)) {
+  let filePath = path.resolve(BASE_DIR, decodedPath.replace(/^\/+/, ''));
+  if (filePath !== BASE_DIR && !filePath.startsWith(BASE_DIR + path.sep)) {
     res.writeHead(403, { 'Content-Type': 'text/plain' });
     res.end('403 Forbidden');
     return;
@@ -235,7 +495,6 @@ const server = http.createServer(async (req, res) => {
 
   fs.stat(filePath, (err, stats) => {
     if (err) {
-      // If file not found, fallback to Index.html for SPA routing
       filePath = path.join(BASE_DIR, 'Index.html');
     } else if (stats.isDirectory()) {
       filePath = path.join(filePath, 'Index.html');
@@ -251,7 +510,7 @@ const server = http.createServer(async (req, res) => {
       const ext = path.extname(filePath).toLowerCase();
       const contentType = MIME_TYPES[ext] || 'application/octet-stream';
 
-      setCors();
+      setCors(res);
       res.writeHead(200, { 'Content-Type': contentType });
       res.end(content);
     });
@@ -259,8 +518,10 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
+  const cfg = getSupabaseEnv();
   console.log(`IT Vision Local Development Server running at http://localhost:${PORT}/`);
   console.log(`Storefront: http://localhost:${PORT}/Index.html#home`);
   console.log(`Admin Portal: http://localhost:${PORT}/Index.html#admin`);
   console.log(`Media Upload API: http://localhost:${PORT}/api/upload-media`);
+  console.log(`Supabase Project (.env): ${cfg.projectId || 'Not configured'} (${cfg.secretKey ? 'Secret Key Loaded' : 'Missing Secret Key'})`);
 });

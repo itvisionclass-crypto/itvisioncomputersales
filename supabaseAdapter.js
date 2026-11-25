@@ -6,6 +6,11 @@
  * Supabase URL: https://mztnzrpfpszfieooeprj.supabase.co
  * Google Drive Media Script URL: https://script.google.com/macros/s/AKfycbwa3D0RyEZl50W6IDGijCKcaL7qbSBm9q4W05yy4l7G5LRIZ9fQvww6j-PVkGoQ7ID53g/exec
  * 
+ * Security Note:
+ * Private credentials (SUPABASE_SECRET_KEY) are kept strictly in server `.env` and
+ * NEVER exposed to the browser. Localhost / Node server requests route safely through
+ * `/api/supabase/*`.
+ * 
  * Target Schema:
  * Table: public.products (id, name, price, photos_link, description, available_pcs)
  */
@@ -13,19 +18,76 @@
 const IT_VISION_CONFIG = {
   SUPABASE_PROJECT_ID: "mztnzrpfpszfieooeprj",
   SUPABASE_URL: "https://mztnzrpfpszfieooeprj.supabase.co",
-  SUPABASE_ANON_KEY: localStorage.getItem("ITV_SUPABASE_ANON_KEY") || "",
+  SUPABASE_ANON_KEY: (typeof localStorage !== "undefined" ? localStorage.getItem("ITV_SUPABASE_ANON_KEY") : "") || "",
   MEDIA_UPLOAD_ENDPOINT: "https://script.google.com/macros/s/AKfycbwa3D0RyEZl50W6IDGijCKcaL7qbSBm9q4W05yy4l7G5LRIZ9fQvww6j-PVkGoQ7ID53g/exec"
 };
 
 let supabaseClient = null;
+let serverBackendAvailable = false;
+let serverConfigLoaded = false;
+let serverInitPromise = null;
+
+function isServerHostedEnvironment() {
+  if (typeof window === "undefined") return false;
+  const proto = window.location.protocol;
+  const host = window.location.hostname || "";
+  if (proto !== "http:" && proto !== "https:") return false;
+  if (host.includes("script.google.com") || host.includes("googleusercontent.com")) return false;
+  return true;
+}
 
 /**
- * Initialize Supabase Client
- * @param {string} [explicitKey] - Optional anon key passed directly
+ * Asynchronously bootstrap Supabase connection from server `.env` (safe public config + proxy)
+ */
+async function initSupabaseAsync() {
+  if (serverConfigLoaded) {
+    return {
+      connected: serverBackendAvailable || !!supabaseClient,
+      mode: serverBackendAvailable ? "server_env" : (supabaseClient ? "client_key" : "disconnected")
+    };
+  }
+
+  if (serverInitPromise) return serverInitPromise;
+
+  serverInitPromise = (async () => {
+    if (isServerHostedEnvironment()) {
+      try {
+        const res = await fetch("/api/supabase/config", { method: "GET" });
+        if (res.ok) {
+          const cfg = await res.json();
+          if (cfg && cfg.connected) {
+            serverBackendAvailable = true;
+            if (cfg.url) IT_VISION_CONFIG.SUPABASE_URL = cfg.url;
+            if (cfg.projectId) IT_VISION_CONFIG.SUPABASE_PROJECT_ID = cfg.projectId;
+            if (cfg.publishableKey) {
+              IT_VISION_CONFIG.SUPABASE_ANON_KEY = cfg.publishableKey;
+              initSupabase(cfg.publishableKey);
+            }
+          }
+        }
+      } catch (e) {
+        // Static server without backend proxy — continue cleanly with manual/localStorage key
+      }
+    }
+
+    serverConfigLoaded = true;
+    if (!supabaseClient) initSupabase();
+    return {
+      connected: serverBackendAvailable || !!supabaseClient,
+      mode: serverBackendAvailable ? "server_env" : (supabaseClient ? "client_key" : "disconnected")
+    };
+  })();
+
+  return serverInitPromise;
+}
+
+/**
+ * Initialize Supabase JS Client (using publishable/anon key only — never secret keys)
+ * @param {string} [explicitKey] - Optional publishable/anon key passed directly
  */
 function initSupabase(explicitKey) {
-  const anonKey = explicitKey || 
-    IT_VISION_CONFIG.SUPABASE_ANON_KEY || 
+  const anonKey = explicitKey ||
+    IT_VISION_CONFIG.SUPABASE_ANON_KEY ||
     (typeof localStorage !== "undefined" ? localStorage.getItem("ITV_SUPABASE_ANON_KEY") : "");
 
   if (anonKey) {
@@ -35,7 +97,6 @@ function initSupabase(explicitKey) {
   if (typeof supabase !== "undefined" && anonKey) {
     try {
       supabaseClient = supabase.createClient(IT_VISION_CONFIG.SUPABASE_URL, anonKey);
-      console.log("✔ Supabase initialized for project:", IT_VISION_CONFIG.SUPABASE_PROJECT_ID);
       return supabaseClient;
     } catch (e) {
       console.warn("Supabase init error:", e);
@@ -45,7 +106,7 @@ function initSupabase(explicitKey) {
 }
 
 /**
- * Set and persist Supabase Anon Key
+ * Set and persist Supabase Publishable / Anon Key (for non-proxy static deployments)
  */
 function setSupabaseAnonKey(key) {
   if (!key || typeof key !== "string") return false;
@@ -60,7 +121,7 @@ function setSupabaseAnonKey(key) {
 }
 
 /**
- * Clear stored Supabase credentials
+ * Clear stored browser Supabase key
  */
 function clearSupabaseAnonKey() {
   IT_VISION_CONFIG.SUPABASE_ANON_KEY = "";
@@ -71,16 +132,54 @@ function clearSupabaseAnonKey() {
 }
 
 /**
- * Check if Supabase client is connected
+ * Check if Supabase connection is ready (either via .env server proxy or client key)
  */
 function isSupabaseConnected() {
+  if (serverBackendAvailable) return true;
   if (!supabaseClient) initSupabase();
   return !!supabaseClient;
 }
 
 /**
+ * Check Supabase connection & database table readiness
+ */
+async function checkSupabaseHealth() {
+  await initSupabaseAsync();
+
+  if (serverBackendAvailable) {
+    try {
+      const res = await fetch("/api/supabase/health");
+      const data = await res.json();
+      return { ...data, mode: "server_env" };
+    } catch (e) {
+      return {
+        success: false,
+        authValid: false,
+        tableExists: false,
+        tableMissing: false,
+        mode: "server_env",
+        message: e.message
+      };
+    }
+  }
+
+  const connected = isSupabaseConnected();
+  return {
+    success: connected,
+    authValid: connected,
+    tableExists: connected,
+    tableMissing: false,
+    mode: "client_key",
+    projectId: IT_VISION_CONFIG.SUPABASE_PROJECT_ID,
+    message: connected
+      ? `Connected via client API key (${IT_VISION_CONFIG.SUPABASE_PROJECT_ID})`
+      : "Disconnected (Publishable/Anon key needed)"
+  };
+}
+
+/**
  * Upload Media (Photos, Videos, Audios) to Google Drive
- * via the Apps Script Web App Endpoint.
+ * via the Apps Script Web App Endpoint or local proxy.
  * 
  * @param {File} file - The file object from <input type="file">
  * @param {Function} [onStatusUpdate] - Callback for progress/status messages
@@ -99,7 +198,6 @@ async function uploadMediaToGoogleDrive(file, onStatusUpdate) {
     reader.onload = async function() {
       try {
         const fullDataUrl = reader.result;
-        // Extract raw base64 string
         let base64Content = fullDataUrl;
         if (base64Content.indexOf("base64,") !== -1) {
           base64Content = base64Content.split("base64,")[1];
@@ -118,7 +216,7 @@ async function uploadMediaToGoogleDrive(file, onStatusUpdate) {
           google.script.run
             .withSuccessHandler(function(res) {
               if (res && (res.status === "success" || res.success)) {
-                var directUrl = res.directUrl || 
+                var directUrl = res.directUrl ||
                   (res.fileId ? `https://lh3.googleusercontent.com/d/${res.fileId}=w800-rw` : res.url);
                 if (onStatusUpdate) onStatusUpdate(`✔ Uploaded successfully to Google Drive!`);
                 resolve({
@@ -141,13 +239,12 @@ async function uploadMediaToGoogleDrive(file, onStatusUpdate) {
         }
 
         // Determine upload endpoint: use local proxy if on localhost/127.0.0.1 to prevent CORS errors
-        const isLocalHost = typeof window !== "undefined" && 
+        const isLocalHost = typeof window !== "undefined" &&
           (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.port === "3000");
         const uploadEndpoint = isLocalHost ? "/api/upload-media" : IT_VISION_CONFIG.MEDIA_UPLOAD_ENDPOINT;
 
         if (onStatusUpdate) onStatusUpdate(`Uploading ${file.name} to ${isLocalHost ? 'Server Proxy / Google Drive' : 'Google Drive'}...`);
 
-        // 2. HTTP POST via Local Proxy or Google Apps Script Web App
         const response = await fetch(uploadEndpoint, {
           method: "POST",
           headers: {
@@ -162,7 +259,6 @@ async function uploadMediaToGoogleDrive(file, onStatusUpdate) {
 
         const result = await response.json();
 
-        // Support various Google Apps Script & Local Proxy response formats
         if (result && (result.success || result.status === "success" || result.fileUrl || result.directUrl || result.url)) {
           let directUrl = result.directUrl;
           if (!directUrl && result.url) {
@@ -181,7 +277,7 @@ async function uploadMediaToGoogleDrive(file, onStatusUpdate) {
             `✔ Uploaded successfully!`;
 
           if (onStatusUpdate) onStatusUpdate(statusMsg);
-          
+
           resolve({
             success: true,
             status: "success",
@@ -202,7 +298,7 @@ async function uploadMediaToGoogleDrive(file, onStatusUpdate) {
       }
     };
 
-    reader.onerror = function(e) {
+    reader.onerror = function() {
       if (onStatusUpdate) onStatusUpdate(`❌ File read error`);
       reject(new Error("Failed to read file on client side."));
     };
@@ -216,9 +312,28 @@ async function uploadMediaToGoogleDrive(file, onStatusUpdate) {
  */
 
 /**
- * Fetch all products from Supabase
+ * Fetch all products from Supabase (prefers server `.env` proxy when available)
  */
 async function fetchSupabaseProducts() {
+  await initSupabaseAsync();
+
+  if (serverBackendAvailable) {
+    try {
+      const res = await fetch("/api/supabase/products");
+      const data = await res.json();
+      if (res.ok && data && data.success) {
+        return data.products || [];
+      }
+      if (data && data.tableMissing) {
+        console.warn("Supabase notice:", data.error);
+      }
+      return null;
+    } catch (err) {
+      console.warn("Server Supabase proxy fetch exception:", err);
+      return null;
+    }
+  }
+
   if (!supabaseClient) initSupabase();
   if (!supabaseClient) return null;
 
@@ -244,26 +359,7 @@ async function fetchSupabaseProducts() {
  * @param {Object} product - { id, name, price, photos_link, description, available_pcs }
  */
 async function saveSupabaseProduct(product) {
-  if (!supabaseClient) initSupabase();
-
-  // If still not connected, give the user an interactive prompt to enter it right away
-  if (!supabaseClient && typeof window !== "undefined") {
-    const entered = window.prompt(
-      "Supabase Project: mztnzrpfpszfieooeprj\n\n" +
-      "To save products to your Supabase database, please paste your anon public key:\n" +
-      "(Found in Supabase Dashboard -> Project Settings -> API -> anon public)"
-    );
-    if (entered && entered.trim()) {
-      setSupabaseAnonKey(entered.trim());
-      if (typeof window.updateSupabaseStatusUI === "function") {
-        window.updateSupabaseStatusUI();
-      }
-    }
-  }
-
-  if (!supabaseClient) {
-    throw new Error("Supabase client is not connected. Please paste your anon public key in the Supabase Connection bar above.");
-  }
+  await initSupabaseAsync();
 
   const payload = {
     id: product.id,
@@ -275,13 +371,52 @@ async function saveSupabaseProduct(product) {
     updated_at: new Date().toISOString()
   };
 
+  if (serverBackendAvailable) {
+    const res = await fetch("/api/supabase/products", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const resJson = await res.json();
+    if (!res.ok || !resJson.success) {
+      const err = new Error(resJson.error || `Supabase save failed (HTTP ${res.status})`);
+      err.tableMissing = Boolean(resJson.tableMissing);
+      err.code = resJson.code || null;
+      throw err;
+    }
+    return resJson.data;
+  }
+
+  if (!supabaseClient) initSupabase();
+
+  if (!supabaseClient && typeof window !== "undefined") {
+    const entered = window.prompt(
+      "Supabase Project: mztnzrpfpszfieooeprj\n\n" +
+      "To save products to your Supabase database, please paste your publishable/anon key:\n" +
+      "(Found in Supabase Dashboard -> Project Settings -> API)"
+    );
+    if (entered && entered.trim()) {
+      setSupabaseAnonKey(entered.trim());
+      if (typeof window.updateSupabaseStatusUI === "function") {
+        window.updateSupabaseStatusUI();
+      }
+    }
+  }
+
+  if (!supabaseClient) {
+    throw new Error("Supabase client is not connected. Please paste your publishable/anon key in the Supabase Connection bar above.");
+  }
+
   const { data, error } = await supabaseClient
     .from('products')
     .upsert(payload, { onConflict: 'id' })
     .select();
 
   if (error) {
-    throw error;
+    const wrapped = new Error(error.message || "Supabase upsert error");
+    wrapped.code = error.code;
+    wrapped.tableMissing = error.code === "PGRST205" || (error.message && error.message.includes("schema cache"));
+    throw wrapped;
   }
   return data;
 }
@@ -290,8 +425,21 @@ async function saveSupabaseProduct(product) {
  * Delete Product from Supabase by ID
  */
 async function deleteSupabaseProduct(productId) {
+  await initSupabaseAsync();
+
+  if (serverBackendAvailable) {
+    const res = await fetch(`/api/supabase/products?id=${encodeURIComponent(productId)}`, {
+      method: "DELETE"
+    });
+    const resJson = await res.json();
+    if (!res.ok || !resJson.success) {
+      throw new Error(resJson.error || `Delete failed (HTTP ${res.status})`);
+    }
+    return resJson.data;
+  }
+
   if (!supabaseClient) initSupabase();
-  if (!supabaseClient) throw new Error("Supabase client is not connected. Please set anon key.");
+  if (!supabaseClient) throw new Error("Supabase client is not connected. Please set your key.");
 
   const { data, error } = await supabaseClient
     .from('products')
@@ -309,11 +457,23 @@ async function deleteSupabaseProduct(productId) {
 window.ITVisionSupabase = {
   config: IT_VISION_CONFIG,
   init: initSupabase,
+  initAsync: initSupabaseAsync,
   setAnonKey: setSupabaseAnonKey,
   clearAnonKey: clearSupabaseAnonKey,
   isConnected: isSupabaseConnected,
+  isServerBacked: () => serverBackendAvailable,
+  checkHealth: checkSupabaseHealth,
   uploadMedia: uploadMediaToGoogleDrive,
   fetchProducts: fetchSupabaseProducts,
   saveProduct: saveSupabaseProduct,
   deleteProduct: deleteSupabaseProduct
 };
+
+// Pre-warm .env connection on load in browser environments
+if (typeof window !== "undefined") {
+  initSupabaseAsync().then(() => {
+    if (typeof window.updateSupabaseStatusUI === "function") {
+      window.updateSupabaseStatusUI();
+    }
+  });
+}

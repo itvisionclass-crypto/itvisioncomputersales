@@ -1,0 +1,243 @@
+const https = require('https');
+const { URL } = require('url');
+
+function getSupabaseEnv() {
+  const url = (process.env.SUPABASE_URL || '').replace(/\/+$/, '');
+  const publishableKey = process.env.SUPABASE_PUBLISHABLE_KEY || '';
+  const secretKey = process.env.SUPABASE_SECRET_KEY || '';
+  const jwksUrl = process.env.SUPABASE_JWKS_URL || '';
+  let projectId = 'mztnzrpfpszfieooeprj';
+  try {
+    if (url) projectId = new URL(url).hostname.split('.')[0] || projectId;
+  } catch (_) {}
+  return { url, publishableKey, secretKey, jwksUrl, projectId };
+}
+
+function jsonResponse(statusCode, bodyObj) {
+  return {
+    statusCode,
+    headers: {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-store',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+    },
+    body: JSON.stringify(bodyObj)
+  };
+}
+
+function supabaseRestRequest({ method, restPath, bodyObj = null, useSecret = true, prefer = null }) {
+  return new Promise((resolve, reject) => {
+    const cfg = getSupabaseEnv();
+    const apiKey = useSecret ? (cfg.secretKey || cfg.publishableKey) : cfg.publishableKey;
+    if (!cfg.url || !apiKey) {
+      return reject(new Error('Supabase credentials are not configured in Netlify environment variables.'));
+    }
+
+    const target = new URL(`${cfg.url}/rest/v1${restPath}`);
+    const bodyStr = bodyObj !== null ? JSON.stringify(bodyObj) : null;
+    const headers = {
+      apikey: apiKey,
+      Accept: 'application/json'
+    };
+
+    if (bodyStr !== null) {
+      headers['Content-Type'] = 'application/json';
+      headers['Content-Length'] = Buffer.byteLength(bodyStr);
+    }
+    if (prefer) {
+      headers.Prefer = prefer;
+    }
+
+    const req = https.request({
+      hostname: target.hostname,
+      port: target.port || 443,
+      path: target.pathname + target.search,
+      method,
+      headers
+    }, (res) => {
+      let raw = '';
+      res.on('data', (c) => { raw += c; });
+      res.on('end', () => {
+        let data = null;
+        try {
+          data = raw ? JSON.parse(raw) : null;
+        } catch (_) {
+          data = null;
+        }
+        resolve({ statusCode: res.statusCode, data, raw });
+      });
+    });
+
+    req.on('error', reject);
+    if (bodyStr !== null) req.write(bodyStr);
+    req.end();
+  });
+}
+
+exports.handler = async function (event) {
+  const method = (event.httpMethod || 'GET').toUpperCase();
+  if (method === 'OPTIONS') {
+    return jsonResponse(204, {});
+  }
+
+  const reqPath = (event.path || '').toLowerCase();
+  const cfg = getSupabaseEnv();
+
+  // Safe Config Endpoint (never exposes SUPABASE_SECRET_KEY)
+  if (reqPath.endsWith('/config') && method === 'GET') {
+    const configured = Boolean(cfg.url && (cfg.secretKey || cfg.publishableKey));
+    return jsonResponse(200, {
+      success: true,
+      connected: configured,
+      mode: configured ? 'server_env' : 'client_key',
+      projectId: cfg.projectId,
+      url: cfg.url || 'https://mztnzrpfpszfieooeprj.supabase.co',
+      publishableKey: cfg.publishableKey,
+      hasSecretKey: Boolean(cfg.secretKey),
+      hasJwksUrl: Boolean(cfg.jwksUrl)
+    });
+  }
+
+  // Health Check Endpoint
+  if (reqPath.endsWith('/health') && method === 'GET') {
+    if (!cfg.url || (!cfg.secretKey && !cfg.publishableKey)) {
+      return jsonResponse(200, {
+        success: false,
+        authValid: false,
+        tableExists: false,
+        tableMissing: false,
+        message: 'Set SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, and SUPABASE_SECRET_KEY in Netlify Environment Variables, or paste your publishable key below.'
+      });
+    }
+
+    try {
+      const rootRes = await supabaseRestRequest({ method: 'GET', restPath: '/', useSecret: true });
+      const authValid = rootRes.statusCode >= 200 && rootRes.statusCode < 300;
+      const tblRes = await supabaseRestRequest({
+        method: 'GET',
+        restPath: '/products?select=id&limit=1',
+        useSecret: true
+      });
+      const tableExists = tblRes.statusCode >= 200 && tblRes.statusCode < 300;
+      const tableMissing = !tableExists && tblRes.data && tblRes.data.code === 'PGRST205';
+
+      return jsonResponse(200, {
+        success: authValid && tableExists,
+        authValid,
+        tableExists,
+        tableMissing,
+        projectId: cfg.projectId,
+        message: tableExists
+          ? `Connected to Supabase (${cfg.projectId}) and public.products table is ready.`
+          : tableMissing
+            ? `Supabase connected, but table 'public.products' does not exist yet. Run supabase_schema.sql in Supabase SQL Editor.`
+            : (tblRes.data && tblRes.data.message) || `Supabase returned status ${tblRes.statusCode}`
+      });
+    } catch (err) {
+      return jsonResponse(502, { success: false, message: err.message });
+    }
+  }
+
+  // Products CRUD Endpoint
+  if (reqPath.endsWith('/products')) {
+    try {
+      if (method === 'GET') {
+        const supaRes = await supabaseRestRequest({
+          method: 'GET',
+          restPath: '/products?select=id,name,price,photos_link,description,available_pcs&order=price.desc',
+          useSecret: true
+        });
+        if (supaRes.statusCode >= 200 && supaRes.statusCode < 300) {
+          return jsonResponse(200, {
+            success: true,
+            products: Array.isArray(supaRes.data) ? supaRes.data : []
+          });
+        }
+        const tableMissing = supaRes.data && supaRes.data.code === 'PGRST205';
+        return jsonResponse(supaRes.statusCode || 502, {
+          success: false,
+          tableMissing,
+          code: supaRes.data && supaRes.data.code,
+          error: (supaRes.data && supaRes.data.message) || 'Failed to fetch products from Supabase.'
+        });
+      }
+
+      if (method === 'POST') {
+        const product = JSON.parse(event.body || '{}');
+        if (!product || !product.id || !product.name || isNaN(Number(product.price))) {
+          return jsonResponse(400, {
+            success: false,
+            error: 'Invalid product payload: id, name, and numeric price are required.'
+          });
+        }
+
+        const payload = {
+          id: String(product.id).trim(),
+          name: String(product.name).trim(),
+          price: Number(product.price),
+          photos_link: product.photos_link ? String(product.photos_link).trim() : '',
+          description: product.description ? String(product.description).trim() : '',
+          available_pcs: parseInt(product.available_pcs, 10) || 0,
+          updated_at: new Date().toISOString()
+        };
+
+        const supaRes = await supabaseRestRequest({
+          method: 'POST',
+          restPath: '/products?on_conflict=id',
+          bodyObj: payload,
+          useSecret: true,
+          prefer: 'resolution=merge-duplicates,return=representation'
+        });
+
+        if (supaRes.statusCode >= 200 && supaRes.statusCode < 300) {
+          return jsonResponse(200, { success: true, data: supaRes.data });
+        }
+        const tableMissing = supaRes.data && supaRes.data.code === 'PGRST205';
+        return jsonResponse(supaRes.statusCode || 502, {
+          success: false,
+          tableMissing,
+          code: supaRes.data && supaRes.data.code,
+          error: tableMissing
+            ? "Table 'public.products' does not exist in Supabase yet. Run supabase_schema.sql in Supabase SQL Editor."
+            : (supaRes.data && supaRes.data.message) || 'Failed to save product to Supabase.'
+        });
+      }
+
+      if (method === 'DELETE') {
+        const qs = event.queryStringParameters || {};
+        let productId = qs.id;
+        if (!productId && event.body) {
+          try {
+            productId = JSON.parse(event.body).id;
+          } catch (_) {}
+        }
+        if (!productId) {
+          return jsonResponse(400, { success: false, error: 'Missing product id for deletion.' });
+        }
+
+        const supaRes = await supabaseRestRequest({
+          method: 'DELETE',
+          restPath: `/products?id=eq.${encodeURIComponent(productId)}`,
+          useSecret: true,
+          prefer: 'return=representation'
+        });
+
+        if (supaRes.statusCode >= 200 && supaRes.statusCode < 300) {
+          return jsonResponse(200, { success: true, data: supaRes.data });
+        }
+        return jsonResponse(supaRes.statusCode || 502, {
+          success: false,
+          error: (supaRes.data && supaRes.data.message) || 'Failed to delete product from Supabase.'
+        });
+      }
+
+      return jsonResponse(405, { success: false, error: 'Method not allowed.' });
+    } catch (err) {
+      return jsonResponse(500, { success: false, error: err.message });
+    }
+  }
+
+  return jsonResponse(404, { success: false, error: 'Supabase API route not found.' });
+};

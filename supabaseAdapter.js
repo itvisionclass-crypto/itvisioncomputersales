@@ -186,7 +186,7 @@ async function checkDriveHealth() {
     try {
       const res = await fetch("/api/drive/health");
       if (res.ok) return await res.json();
-    } catch (_) {}
+    } catch (_) { }
   }
   return {
     connected: null,
@@ -239,14 +239,14 @@ async function uploadMediaToGoogleDrive(file, onStatusUpdate, onProgress) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
-    reader.onprogress = function(ev) {
+    reader.onprogress = function (ev) {
       if (ev.lengthComputable) {
         const readPct = 5 + Math.round((ev.loaded / ev.total) * 15);
         emitProgress(readPct, `Reading ${file.name}...`);
       }
     };
 
-    reader.onload = async function() {
+    reader.onload = async function () {
       try {
         const fullDataUrl = reader.result;
         let base64Content = fullDataUrl;
@@ -266,7 +266,7 @@ async function uploadMediaToGoogleDrive(file, onStatusUpdate, onProgress) {
         if (typeof google !== "undefined" && google.script && google.script.run && typeof google.script.run.uploadPhoto === "function") {
           emitProgress(50, `Uploading ${file.name} via Google Apps Script...`);
           google.script.run
-            .withSuccessHandler(function(res) {
+            .withSuccessHandler(function (res) {
               if (res && (res.status === "success" || res.success)) {
                 var directUrl = res.directUrl ||
                   (res.fileId ? `https://lh3.googleusercontent.com/d/${res.fileId}=w800-rw` : res.url);
@@ -283,21 +283,22 @@ async function uploadMediaToGoogleDrive(file, onStatusUpdate, onProgress) {
                 reject(new Error(res ? res.message : "Upload failed"));
               }
             })
-            .withFailureHandler(function(err) {
+            .withFailureHandler(function (err) {
               reject(err);
             })
             .uploadPhoto(fullDataUrl, file.name, file.type || "");
           return;
         }
 
-        // Check whether genuine server.js backend is active before using /api/upload-media proxy
+        // Check whether genuine server.js / Netlify backend proxy is active before using /api/upload-media
         await initSupabaseAsync();
 
-        const sendXhrUpload = (endpoint, contentType, bodyStr) => {
+        // Same-origin XHR upload (safe for real byte progress only on same origin — never triggers CORS preflight)
+        const sendSameOriginXhrUpload = (endpoint, bodyStr) => {
           return new Promise((xhrResolve, xhrReject) => {
             const xhr = new XMLHttpRequest();
             xhr.open("POST", endpoint, true);
-            xhr.setRequestHeader("Content-Type", contentType);
+            xhr.setRequestHeader("Content-Type", "application/json");
 
             xhr.upload.onprogress = function(ev) {
               if (ev.lengthComputable && ev.total > 0) {
@@ -334,35 +335,65 @@ async function uploadMediaToGoogleDrive(file, onStatusUpdate, onProgress) {
           });
         };
 
-        const bodyJson = JSON.stringify(payload);
-        let xhrResult;
+        // Cross-origin CORS simple-request POST via fetch (NO xhr.upload listeners, so NO OPTIONS preflight!)
+        // Google Apps Script Web Apps omit ACAO on OPTIONS preflight, which breaks cross-origin XHR with upload listeners.
+        const sendDirectAppsScriptFetch = async (bodyStr) => {
+          let currentPct = 22;
+          emitProgress(currentPct, `Uploading ${file.name} to Google Drive...`);
+          const progressTimer = setInterval(() => {
+            if (currentPct < 92) {
+              currentPct += currentPct < 70 ? 6 : 2;
+              emitProgress(currentPct, `Uploading ${file.name} to Google Drive... ${currentPct}%`);
+            }
+          }, 300);
 
-        if (serverBackendAvailable) {
           try {
-            xhrResult = await sendXhrUpload("/api/upload-media", "application/json", bodyJson);
+            const res = await fetch(IT_VISION_CONFIG.MEDIA_UPLOAD_ENDPOINT, {
+              method: "POST",
+              mode: "cors",
+              credentials: "omit",
+              redirect: "follow",
+              headers: {
+                "Content-Type": "text/plain;charset=utf-8"
+              },
+              body: bodyStr
+            });
+
+            const rawText = await res.text();
+            let parsed = null;
+            try {
+              parsed = JSON.parse(rawText);
+            } catch (_) {
+              if (rawText && rawText.includes("Script function not found: doPost")) {
+                throw new Error("Google Apps Script deployment is missing doPost(e).");
+              }
+              throw new Error(`Google Drive script returned HTTP ${res.status} (non-JSON response).`);
+            }
+            return { ok: res.ok, status: res.status, result: parsed };
+          } finally {
+            clearInterval(progressTimer);
+          }
+        };
+
+        const bodyJson = JSON.stringify(payload);
+        let uploadResponse;
+
+        if (serverBackendAvailable && typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")) {
+          try {
+            uploadResponse = await sendSameOriginXhrUpload("/api/upload-media", bodyJson);
           } catch (proxyErr) {
-            // If static host / proxy returned 404 or non-JSON HTML, seamlessly upload directly to Google Apps Script
             if (proxyErr.httpStatus === 404 || proxyErr.isInvalidJson || proxyErr.httpStatus === 0) {
-              emitProgress(25, `Uploading ${file.name} directly to Google Drive script...`);
-              xhrResult = await sendXhrUpload(
-                IT_VISION_CONFIG.MEDIA_UPLOAD_ENDPOINT,
-                "text/plain;charset=utf-8",
-                bodyJson
-              );
+              uploadResponse = await sendDirectAppsScriptFetch(bodyJson);
             } else {
               throw proxyErr;
             }
           }
         } else {
-          // Direct upload to Google Apps Script doPost(e) using simple-request CORS Content-Type
-          xhrResult = await sendXhrUpload(
-            IT_VISION_CONFIG.MEDIA_UPLOAD_ENDPOINT,
-            "text/plain;charset=utf-8",
-            bodyJson
-          );
+          // Netlify / static / production hosting: upload directly to Google Apps Script without OPTIONS preflight
+          uploadResponse = await sendDirectAppsScriptFetch(bodyJson);
         }
 
-        const { ok, status, result } = xhrResult;
+        const { ok, status, result } = uploadResponse;
 
         if (ok && result && (result.success || result.status === "success" || result.fileUrl || result.directUrl || result.url)) {
           let directUrl = result.directUrl;
@@ -407,7 +438,7 @@ async function uploadMediaToGoogleDrive(file, onStatusUpdate, onProgress) {
       }
     };
 
-    reader.onerror = function() {
+    reader.onerror = function () {
       if (onStatusUpdate) onStatusUpdate(`❌ File read error`);
       reject(new Error("Failed to read file on client side."));
     };

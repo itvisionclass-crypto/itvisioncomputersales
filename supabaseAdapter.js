@@ -622,7 +622,10 @@ async function saveSupabaseProduct(product) {
   }
 
   if (error) {
-    const wrapped = new Error(error.message || "Supabase upsert error");
+    const isRlsDeny = error.code === "42501" || (error.message && error.message.toLowerCase().includes("row-level security"));
+    const wrapped = new Error(isRlsDeny
+      ? "Writes are secured server-side via /api/supabase/products (SUPABASE_SECRET_KEY). Open the hosted app rather than direct anonymous client writes."
+      : (error.message || "Supabase upsert error"));
     wrapped.code = error.code;
     wrapped.tableMissing = isMissingTableErr(error);
     throw wrapped;
@@ -660,7 +663,10 @@ async function deleteSupabaseProduct(productId) {
     .select();
 
   if (error) {
-    const wrapped = new Error(error.message || "Delete failed");
+    const isRlsDeny = error.code === "42501" || (error.message && error.message.toLowerCase().includes("row-level security"));
+    const wrapped = new Error(isRlsDeny
+      ? "Deletes are secured server-side via /api/supabase/products (SUPABASE_SECRET_KEY). Open the hosted app rather than direct anonymous client deletes."
+      : (error.message || "Delete failed"));
     wrapped.code = error.code;
     wrapped.tableMissing = isMissingTableErr(error);
     throw wrapped;

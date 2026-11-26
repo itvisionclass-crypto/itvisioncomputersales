@@ -2961,7 +2961,9 @@
         "  updated_at TIMESTAMPTZ DEFAULT NOW()\n" +
         ");\n" +
         "ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;\n" +
-        "CREATE POLICY \"Allow full access on products\" ON public.products FOR ALL USING (true) WITH CHECK (true);";
+        "DROP POLICY IF EXISTS \"Allow full access on products\" ON public.products;\n" +
+        "DROP POLICY IF EXISTS \"Allow public read access on products\" ON public.products;\n" +
+        "CREATE POLICY \"Allow public read access on products\" ON public.products FOR SELECT TO anon, authenticated USING (true);";
 
       if (typeof navigator !== "undefined" && navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(sql).then(function() {

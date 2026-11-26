@@ -16,6 +16,7 @@ DROP TABLE IF EXISTS public.products CASCADE;
 
 -- 2. CREATE SIMPLIFIED PRODUCTS TABLE
 -- Schema fields requested: id, name, price, category, photos_link (url or JSON array), description, available_pcs
+-- Note: Primary key on `id` handles PK lookups & upserts; unnecessary secondary indexes omitted to avoid Unused Index advisor hints.
 CREATE TABLE public.products (
     id VARCHAR(50) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -28,24 +29,15 @@ CREATE TABLE public.products (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Indexing for fast title, category, and price queries
-CREATE INDEX IF NOT EXISTS idx_products_name ON public.products(name);
-CREATE INDEX IF NOT EXISTS idx_products_category ON public.products(category);
-CREATE INDEX IF NOT EXISTS idx_products_price ON public.products(price);
-
 -- 3. ENABLE ROW LEVEL SECURITY (RLS)
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
 
--- Allow public read access to all products
+-- Allow public read-only catalog access for storefront visitors (anon & authenticated).
+-- All writes/updates/deletes run server-side using SUPABASE_SECRET_KEY (service_role bypasses RLS securely).
 CREATE POLICY "Allow public read access on products"
     ON public.products FOR SELECT
+    TO anon, authenticated
     USING (true);
-
--- Allow public and service role insert/update/delete access
-CREATE POLICY "Allow full access on products"
-    ON public.products FOR ALL
-    USING (true)
-    WITH CHECK (true);
 
 -- 4. SEED INITIAL PRODUCTS DATA
 INSERT INTO public.products (id, name, price, category, photos_link, description, available_pcs) VALUES

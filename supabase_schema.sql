@@ -139,3 +139,29 @@ SET name = EXCLUDED.name,
     description = EXCLUDED.description,
     available_pcs = EXCLUDED.available_pcs,
     updated_at = NOW();
+
+-- 5. ADMIN TRANSACTIONS & BILLING LEDGER TABLE
+CREATE TABLE IF NOT EXISTS public.transactions (
+    bill_no VARCHAR(50) PRIMARY KEY,
+    txn_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    party_name VARCHAR(255) NOT NULL,
+    address TEXT DEFAULT '',
+    contact_no VARCHAR(50) DEFAULT '',
+    product_type VARCHAR(30) NOT NULL DEFAULT 'Sale',
+    description TEXT DEFAULT '',
+    total_bill_amount NUMERIC(12, 2) NOT NULL DEFAULT 0,
+    received_amount NUMERIC(12, 2) NOT NULL DEFAULT 0,
+    due_amount NUMERIC(12, 2) NOT NULL DEFAULT 0,
+    product_cost NUMERIC(12, 2) NOT NULL DEFAULT 0,
+    net_profit NUMERIC(12, 2) NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Service role access on transactions"
+    ON public.transactions FOR ALL
+    TO service_role
+    USING ((SELECT auth.role()) = 'service_role')
+    WITH CHECK ((SELECT auth.role()) = 'service_role');

@@ -1969,6 +1969,19 @@
       <!-- Admin Dashboard Content (Unlocked) -->
       <div id="admin-dashboard-content" style="display:none;">
         
+        <!-- Quick Module Jump Navigation -->
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;">
+          <button type="button" class="btn-bulk-step" style="background:var(--color-primary-navy); color:#FFFFFF; border-color:var(--color-primary-navy); font-weight:700; padding:6px 14px; height:auto;" onclick="var el=document.getElementById('admin-transactions-box'); if(el&&el.scrollIntoView) el.scrollIntoView({behavior:'smooth'});">
+            🧾 Transactions &amp; Billing
+          </button>
+          <button type="button" class="btn-bulk-step" style="background:#FFFFFF; color:var(--color-primary-navy); border-color:#CBD5E1; font-weight:700; padding:6px 14px; height:auto;" onclick="var el=document.getElementById('admin-products-box'); if(el&&el.scrollIntoView) el.scrollIntoView({behavior:'smooth'});">
+            ⚡ Products Catalog
+          </button>
+          <button type="button" class="btn-bulk-step" style="background:#FFFFFF; color:var(--color-primary-navy); border-color:#CBD5E1; font-weight:700; padding:6px 14px; height:auto;" onclick="var el=document.getElementById('admin-orders-box'); if(el&&el.scrollIntoView) el.scrollIntoView({behavior:'smooth'});">
+            📋 Orders Queue
+          </button>
+        </div>
+
         <!-- KPI Cards -->
         <div class="admin-kpis-grid">
           <div class="kpi-card">
@@ -1989,8 +2002,159 @@
           </div>
         </div>
 
+        <!-- ================================================================
+             ADMIN TRANSACTIONS & BILLING MODULE (IT26-27/001+)
+             ================================================================ -->
+        <div class="admin-table-box" id="admin-transactions-box">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px; border-bottom:1px solid var(--color-border-hairline); padding-bottom:8px;">
+            <div>
+              <h4 style="color:var(--color-primary-navy); font-size:15px; font-weight:800;">
+                🧾 Transactions, Billing &amp; Profit Ledger (IT26-27/001+)
+              </h4>
+              <p style="font-size:11px; color:var(--color-text-secondary);">
+                Track Sales, Services &amp; Other bills with automatic Due Amount &amp; Net Profit calculations
+              </p>
+            </div>
+            <button type="button" class="btn-bulk-step" style="padding:4px 12px; height:auto;" onclick="refreshAdminTransactions(true)">
+              🔄 Sync Transactions
+            </button>
+          </div>
+
+          <!-- Transactions Summary Strip -->
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:10px; margin-bottom:16px;">
+            <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:6px; padding:10px 12px;">
+              <div style="font-size:10px; font-weight:700; color:#64748B; text-transform:uppercase;">Total Billed</div>
+              <div id="txn-kpi-total" class="tabular" style="font-size:16px; font-weight:800; color:#0F172A;">₹0</div>
+            </div>
+            <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:6px; padding:10px 12px;">
+              <div style="font-size:10px; font-weight:700; color:#1E40AF; text-transform:uppercase;">Received Amount</div>
+              <div id="txn-kpi-received" class="tabular" style="font-size:16px; font-weight:800; color:#1D4ED8;">₹0</div>
+            </div>
+            <div style="background:#FEF2F2; border:1px solid #FECACA; border-radius:6px; padding:10px 12px;">
+              <div style="font-size:10px; font-weight:700; color:#991B1B; text-transform:uppercase;">Due Balance</div>
+              <div id="txn-kpi-due" class="tabular" style="font-size:16px; font-weight:800; color:#DC2626;">₹0</div>
+            </div>
+            <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:6px; padding:10px 12px;">
+              <div style="font-size:10px; font-weight:700; color:#166534; text-transform:uppercase;">Total Net Profit</div>
+              <div id="txn-kpi-profit" class="tabular" style="font-size:16px; font-weight:800; color:#16A34A;">₹0</div>
+            </div>
+          </div>
+
+          <!-- Transaction Entry / Edit Form -->
+          <form id="admin-transaction-form" onsubmit="handleSaveTransaction(event)" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(185px, 1fr)); gap:12px; margin-bottom:18px; background:var(--color-bg-subtle); padding:16px; border-radius:8px; border:1px solid #E2E8F0;">
+            <div id="admin-txn-edit-banner" style="display:none; grid-column:1 / -1; background:#DBEAFE; border:1px solid #93C5FD; color:#1E3A8A; padding:8px 12px; border-radius:6px; font-size:12px; font-weight:700; justify-content:space-between; align-items:center;">
+              <span id="admin-txn-edit-label">✏️ Editing Bill</span>
+              <button type="button" class="btn-bulk-step" style="background:#FFFFFF; color:#1E3A8A; border-color:#93C5FD;" onclick="resetTransactionForm()">Cancel Edit</button>
+            </div>
+
+            <div class="form-group-sm">
+              <label for="txn-form-billno">Bill No (*Auto Start IT26-27/001):</label>
+              <input type="text" id="txn-form-billno" class="form-ctrl-sm" placeholder="IT26-27/001" required>
+            </div>
+            <div class="form-group-sm">
+              <label for="txn-form-date">Bill Date (Today / Manual):</label>
+              <input type="date" id="txn-form-date" class="form-ctrl-sm" required>
+            </div>
+            <div class="form-group-sm">
+              <label for="txn-form-party">Party Name (*Required):</label>
+              <input type="text" id="txn-form-party" class="form-ctrl-sm" placeholder="e.g. Rajesh Patel / Shree Infotech" required>
+            </div>
+            <div class="form-group-sm">
+              <label for="txn-form-contact">Contact Number:</label>
+              <input type="tel" id="txn-form-contact" class="form-ctrl-sm" placeholder="e.g. 9924253384">
+            </div>
+            <div class="form-group-sm" style="grid-column: span 2;">
+              <label for="txn-form-address">Address:</label>
+              <input type="text" id="txn-form-address" class="form-ctrl-sm" placeholder="e.g. Station Road, Prantij, Sabarkantha">
+            </div>
+            <div class="form-group-sm">
+              <label for="txn-form-type">Product / Transaction Type:</label>
+              <select id="txn-form-type" class="form-ctrl-sm" required>
+                <option value="Sale">🛒 Sale</option>
+                <option value="Service">🛠️ Service</option>
+                <option value="Other">📦 Other</option>
+              </select>
+            </div>
+
+            <div class="form-group-sm" style="grid-column:1 / -1;">
+              <label for="txn-form-description">Description:</label>
+              <textarea id="txn-form-description" class="form-ctrl-sm" style="height:56px; padding:6px 10px;" placeholder="Enter item names, serial numbers, repair notes, or billing particulars..." required></textarea>
+            </div>
+
+            <!-- Billing & Auto Profit Row -->
+            <div class="form-group-sm">
+              <label for="txn-form-total">Total Bill Amount (₹):</label>
+              <input type="number" id="txn-form-total" class="form-ctrl-sm tabular" placeholder="0.00" step="0.01" min="0" oninput="recalculateTransactionMetrics()" required>
+            </div>
+            <div class="form-group-sm">
+              <label for="txn-form-received">Received Amount (₹):</label>
+              <input type="number" id="txn-form-received" class="form-ctrl-sm tabular" placeholder="0.00" step="0.01" min="0" value="0" oninput="recalculateTransactionMetrics()" required>
+            </div>
+            <div class="form-group-sm">
+              <label for="txn-form-due">Due Amount (₹) [Auto]:</label>
+              <input type="number" id="txn-form-due" class="form-ctrl-sm tabular" value="0.00" step="0.01" readonly style="background:#FFF7ED; color:#9A3412; font-weight:800; border-color:#FED7AA;">
+            </div>
+            <div class="form-group-sm">
+              <label for="txn-form-cost">Total Cost of Product (₹):</label>
+              <input type="number" id="txn-form-cost" class="form-ctrl-sm tabular" placeholder="0.00" step="0.01" min="0" value="0" oninput="recalculateTransactionMetrics()" required>
+            </div>
+            <div class="form-group-sm">
+              <label for="txn-form-profit">Net Profit (₹) [Auto]:</label>
+              <input type="number" id="txn-form-profit" class="form-ctrl-sm tabular" value="0.00" step="0.01" readonly style="background:#DCFCE7; color:#166534; font-weight:800; border-color:#86EFAC;">
+            </div>
+
+            <div style="grid-column:1 / -1; display:flex; gap:10px; flex-wrap:wrap; margin-top:4px;">
+              <button type="submit" id="btn-save-txn-submit" class="btn-checkout-confirm" style="width:auto; padding:0 24px; background:var(--color-primary-navy);">
+                💾 Save Transaction Bill
+              </button>
+              <button type="button" class="btn-hero-secondary" style="background:#E2E8F0; color:#0F172A;" onclick="resetTransactionForm()">
+                Clear / Next Bill No
+              </button>
+            </div>
+          </form>
+
+          <!-- Filter & Search Bar -->
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:10px;">
+            <h5 style="margin:0; color:var(--color-text-primary);">Saved Transactions Ledger</h5>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+              <input type="text" id="txn-search-input" class="form-ctrl-sm" style="width:220px;" placeholder="Search Bill No, Party, Contact..." oninput="renderTransactionsTable()">
+              <select id="txn-filter-type" class="form-ctrl-sm" style="width:140px;" onchange="renderTransactionsTable()">
+                <option value="ALL">All Types</option>
+                <option value="Sale">Sale</option>
+                <option value="Service">Service</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Transactions Table -->
+          <div style="overflow-x:auto;">
+            <table class="admin-table" style="min-width:960px;">
+              <thead>
+                <tr>
+                  <th>Bill No</th>
+                  <th>Date</th>
+                  <th>Party Name &amp; Address</th>
+                  <th>Contact</th>
+                  <th>Type</th>
+                  <th>Description</th>
+                  <th>Total Bill</th>
+                  <th>Received</th>
+                  <th>Due</th>
+                  <th>Product Cost</th>
+                  <th>Net Profit</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="admin-transactions-tbody">
+                <!-- Rendered via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         <!-- Orders & UTR Verification Queue -->
-        <div class="admin-table-box">
+        <div class="admin-table-box" id="admin-orders-box">
           <h4 style="margin-bottom:12px; color:var(--color-primary-navy);">Incoming Orders &amp; UPI UTR Verification Queue</h4>
           <table class="admin-table">
             <thead>
@@ -2011,7 +2175,7 @@
         </div>
 
         <!-- Supabase Products Management Form (Only Entity in Supabase) -->
-        <div class="admin-table-box">
+        <div class="admin-table-box" id="admin-products-box">
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px; border-bottom:1px solid var(--color-border-hairline); padding-bottom:8px;">
             <div>
               <h4 style="color:var(--color-primary-navy); font-size:15px; font-weight:800;">
@@ -3797,6 +3961,9 @@
             var json = await res.json();
             if (res.ok && json && json.success) {
               authenticated = true;
+              if (json.token && window.ITVisionSupabase && window.ITVisionSupabase.setAdminToken) {
+                window.ITVisionSupabase.setAdminToken(json.token);
+              }
             } else {
               explicitReject = true;
             }
@@ -3841,6 +4008,9 @@
     }
 
     function logoutAdminPanel() {
+      if (window.ITVisionSupabase && window.ITVisionSupabase.clearAdminToken) {
+        window.ITVisionSupabase.clearAdminToken();
+      }
       var guard = document.getElementById("admin-login-guard");
       var content = document.getElementById("admin-dashboard-content");
       var logoutBtn = document.getElementById("btn-admin-logout");
@@ -3881,8 +4051,389 @@
         `;
       }
 
-      // Hydrate Supabase Products Table
+      // Hydrate Transactions Module (auto bill no IT26-27/001+ & today's date) & Products Table
+      refreshAdminTransactions(false);
       refreshSupabaseProductsTable();
+    }
+
+    /**
+     * Admin Transactions & Billing Module (IT26-27/001+)
+     */
+    window.ITVisionTransactionsCache = [];
+    window.ITVisionEditingBillNo = null;
+
+    function getTodayDateISO() {
+      var d = new Date();
+      var yyyy = d.getFullYear();
+      var mm = ("0" + (d.getMonth() + 1)).slice(-2);
+      var dd = ("0" + d.getDate()).slice(-2);
+      return yyyy + "-" + mm + "-" + dd;
+    }
+
+    function generateNextBillNo(list) {
+      var prefix = "IT26-27/";
+      var maxNum = 0;
+      var items = Array.isArray(list) ? list : [];
+      for (var i = 0; i < items.length; i++) {
+        var b = String((items[i] && items[i].bill_no) || "").trim();
+        var m = b.match(/^IT26-27\/(\d+)$/i);
+        if (m && m[1]) {
+          var n = parseInt(m[1], 10);
+          if (!isNaN(n) && n > maxNum) maxNum = n;
+        }
+      }
+      var nextNum = maxNum + 1;
+      return prefix + ("000" + nextNum).slice(-Math.max(3, String(nextNum).length));
+    }
+
+    function recalculateTransactionMetrics() {
+      var totalEl = document.getElementById("txn-form-total");
+      var receivedEl = document.getElementById("txn-form-received");
+      var dueEl = document.getElementById("txn-form-due");
+      var costEl = document.getElementById("txn-form-cost");
+      var profitEl = document.getElementById("txn-form-profit");
+
+      var total = parseFloat(totalEl && totalEl.value ? totalEl.value : "0");
+      var received = parseFloat(receivedEl && receivedEl.value ? receivedEl.value : "0");
+      var cost = parseFloat(costEl && costEl.value ? costEl.value : "0");
+      if (isNaN(total)) total = 0;
+      if (isNaN(received)) received = 0;
+      if (isNaN(cost)) cost = 0;
+
+      var due = Number((total - received).toFixed(2));
+      var profit = Number((total - cost).toFixed(2));
+
+      if (dueEl) {
+        dueEl.value = due.toFixed(2);
+        if (dueEl.style) {
+          dueEl.style.background = due > 0 ? "#FEF2F2" : "#F0FDF4";
+          dueEl.style.color = due > 0 ? "#B91C1C" : "#166534";
+          dueEl.style.borderColor = due > 0 ? "#FCA5A5" : "#86EFAC";
+        }
+      }
+      if (profitEl) {
+        profitEl.value = profit.toFixed(2);
+        if (profitEl.style) {
+          profitEl.style.background = profit >= 0 ? "#DCFCE7" : "#FEE2E2";
+          profitEl.style.color = profit >= 0 ? "#166534" : "#B91C1C";
+          profitEl.style.borderColor = profit >= 0 ? "#86EFAC" : "#FCA5A5";
+        }
+      }
+      return { due: due, profit: profit };
+    }
+
+    function loadLocalTransactionsCache() {
+      var store = typeof localStorage !== "undefined" ? localStorage : null;
+      var raw = safeStorageGet(store, "ITV_TRANSACTIONS_CACHE");
+      if (!raw) return [];
+      try {
+        var parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (_) { return []; }
+    }
+
+    function saveLocalTransactionsCache(list) {
+      var store = typeof localStorage !== "undefined" ? localStorage : null;
+      safeStorageSet(store, "ITV_TRANSACTIONS_CACHE", JSON.stringify(list || []));
+    }
+
+    async function refreshAdminTransactions(forceSync = false) {
+      var loaded = [];
+      try {
+        if (window.ITVisionSupabase && window.ITVisionSupabase.fetchTransactions) {
+          var res = await window.ITVisionSupabase.fetchTransactions();
+          if (Array.isArray(res)) {
+            loaded = res;
+            saveLocalTransactionsCache(loaded);
+          }
+        }
+      } catch (err) {
+        console.warn("Transactions sync notice:", err && err.message ? err.message : err);
+        if (forceSync && err && err.authRequired) {
+          alert(err.message);
+        }
+      }
+
+      if (loaded.length === 0) {
+        var localCached = loadLocalTransactionsCache();
+        if (localCached.length > 0 && (!window.ITVisionSupabase || !window.ITVisionSupabase.isServerBacked || !window.ITVisionSupabase.isServerBacked())) {
+          loaded = localCached;
+        }
+      }
+
+      window.ITVisionTransactionsCache = loaded;
+      renderTransactionsTable();
+      if (!window.ITVisionEditingBillNo) {
+        resetTransactionForm();
+      }
+    }
+
+    function resetTransactionForm() {
+      var form = document.getElementById("admin-transaction-form");
+      if (form && typeof form.reset === "function") form.reset();
+      window.ITVisionEditingBillNo = null;
+
+      var billEl = document.getElementById("txn-form-billno");
+      if (billEl) {
+        billEl.readOnly = false;
+        if (billEl.style) billEl.style.background = "";
+        billEl.value = generateNextBillNo(window.ITVisionTransactionsCache);
+      }
+      var dateEl = document.getElementById("txn-form-date");
+      if (dateEl) dateEl.value = getTodayDateISO();
+
+      var recEl = document.getElementById("txn-form-received");
+      if (recEl) recEl.value = "0";
+      var costEl = document.getElementById("txn-form-cost");
+      if (costEl) costEl.value = "0";
+
+      var editBanner = document.getElementById("admin-txn-edit-banner");
+      if (editBanner && editBanner.style) editBanner.style.display = "none";
+      var submitBtn = document.getElementById("btn-save-txn-submit");
+      if (submitBtn) submitBtn.innerText = "💾 Save Transaction Bill";
+
+      recalculateTransactionMetrics();
+    }
+
+    async function handleSaveTransaction(event) {
+      if (event) event.preventDefault();
+
+      var billNo = (document.getElementById("txn-form-billno").value || "").trim();
+      var txnDate = (document.getElementById("txn-form-date").value || "").trim() || getTodayDateISO();
+      var partyName = (document.getElementById("txn-form-party").value || "").trim();
+      var address = (document.getElementById("txn-form-address").value || "").trim();
+      var contactNo = (document.getElementById("txn-form-contact").value || "").trim();
+      var productType = (document.getElementById("txn-form-type").value || "Sale").trim();
+      var description = (document.getElementById("txn-form-description").value || "").trim();
+      var totalBill = parseFloat(document.getElementById("txn-form-total").value);
+      var receivedAmt = parseFloat(document.getElementById("txn-form-received").value || "0");
+      var productCost = parseFloat(document.getElementById("txn-form-cost").value || "0");
+
+      if (!billNo || !partyName || isNaN(totalBill)) {
+        alert("Please enter valid Bill No, Party Name, and Total Bill Amount.");
+        return;
+      }
+      if (isNaN(receivedAmt)) receivedAmt = 0;
+      if (isNaN(productCost)) productCost = 0;
+
+      var list = window.ITVisionTransactionsCache || [];
+      var existingIdx = list.findIndex(function(t) { return t.bill_no === billNo; });
+      if (!window.ITVisionEditingBillNo && existingIdx !== -1) {
+        if (!confirm(`Bill No "${billNo}" already exists. Do you want to update this existing bill?`)) {
+          return;
+        }
+      }
+
+      var dueAmt = Number((totalBill - receivedAmt).toFixed(2));
+      var netProfit = Number((totalBill - productCost).toFixed(2));
+
+      var txn = {
+        bill_no: billNo,
+        txn_date: txnDate,
+        party_name: partyName,
+        address: address,
+        contact_no: contactNo,
+        product_type: productType,
+        description: description,
+        total_bill_amount: Number(totalBill.toFixed(2)),
+        received_amount: Number(receivedAmt.toFixed(2)),
+        due_amount: dueAmt,
+        product_cost: Number(productCost.toFixed(2)),
+        net_profit: netProfit
+      };
+
+      var savedCloud = false;
+      try {
+        if (window.ITVisionSupabase && window.ITVisionSupabase.saveTransaction && window.ITVisionSupabase.getAdminToken && window.ITVisionSupabase.getAdminToken()) {
+          await window.ITVisionSupabase.saveTransaction(txn);
+          savedCloud = true;
+        }
+      } catch (err) {
+        console.warn("Supabase transaction save exception:", err && err.message);
+        alert("Notice: " + err.message + "\n\nSaved locally in browser cache.");
+      }
+
+      if (existingIdx !== -1) {
+        list[existingIdx] = txn;
+      } else {
+        list.unshift(txn);
+      }
+      window.ITVisionTransactionsCache = list;
+      saveLocalTransactionsCache(list);
+
+      var wasEditing = Boolean(window.ITVisionEditingBillNo);
+      renderTransactionsTable();
+      resetTransactionForm();
+
+      alert(`✔ Transaction Bill "${txn.bill_no}" ${wasEditing ? "updated" : "saved"}${savedCloud ? " to Supabase" : " locally"}!`);
+    }
+
+    function handleEditTransaction(billNo) {
+      var list = window.ITVisionTransactionsCache || [];
+      var t = list.find(function(item) { return item.bill_no === billNo; });
+      if (!t) {
+        alert("Could not find transaction bill: " + billNo);
+        return;
+      }
+
+      window.ITVisionEditingBillNo = billNo;
+      var billEl = document.getElementById("txn-form-billno");
+      if (billEl) {
+        billEl.value = t.bill_no;
+        billEl.readOnly = true;
+        if (billEl.style) billEl.style.background = "#E2E8F0";
+      }
+      var dateEl = document.getElementById("txn-form-date");
+      if (dateEl) dateEl.value = t.txn_date ? String(t.txn_date).slice(0, 10) : getTodayDateISO();
+      var partyEl = document.getElementById("txn-form-party");
+      if (partyEl) partyEl.value = t.party_name || "";
+      var addrEl = document.getElementById("txn-form-address");
+      if (addrEl) addrEl.value = t.address || "";
+      var contactEl = document.getElementById("txn-form-contact");
+      if (contactEl) contactEl.value = t.contact_no || "";
+      var typeEl = document.getElementById("txn-form-type");
+      if (typeEl) typeEl.value = t.product_type || "Sale";
+      var descEl = document.getElementById("txn-form-description");
+      if (descEl) descEl.value = t.description || "";
+      var totalEl = document.getElementById("txn-form-total");
+      if (totalEl) totalEl.value = Number(t.total_bill_amount || 0);
+      var recEl = document.getElementById("txn-form-received");
+      if (recEl) recEl.value = Number(t.received_amount || 0);
+      var costEl = document.getElementById("txn-form-cost");
+      if (costEl) costEl.value = Number(t.product_cost || 0);
+
+      recalculateTransactionMetrics();
+
+      var editBanner = document.getElementById("admin-txn-edit-banner");
+      var editLabel = document.getElementById("admin-txn-edit-label");
+      var submitBtn = document.getElementById("btn-save-txn-submit");
+      if (editBanner && editBanner.style) editBanner.style.display = "flex";
+      if (editLabel) editLabel.innerText = `✏️ Editing Bill No: ${billNo} (${t.party_name || ""})`;
+      if (submitBtn) submitBtn.innerText = "💾 Update Transaction Bill";
+
+      var formEl = document.getElementById("admin-transaction-form");
+      if (formEl && typeof formEl.scrollIntoView === "function") {
+        formEl.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+
+    async function handleDeleteTransaction(billNo) {
+      if (!confirm(`Are you sure you want to delete Bill No "${billNo}"?`)) {
+        return;
+      }
+
+      var deletedCloud = false;
+      try {
+        if (window.ITVisionSupabase && window.ITVisionSupabase.deleteTransaction && window.ITVisionSupabase.getAdminToken && window.ITVisionSupabase.getAdminToken()) {
+          await window.ITVisionSupabase.deleteTransaction(billNo);
+          deletedCloud = true;
+        }
+      } catch (err) {
+        alert("Delete failed: " + err.message);
+        return;
+      }
+
+      var updated = (window.ITVisionTransactionsCache || []).filter(function(t) { return t.bill_no !== billNo; });
+      window.ITVisionTransactionsCache = updated;
+      saveLocalTransactionsCache(updated);
+
+      if (window.ITVisionEditingBillNo === billNo) {
+        resetTransactionForm();
+      } else {
+        var billEl = document.getElementById("txn-form-billno");
+        if (billEl && !window.ITVisionEditingBillNo) {
+          billEl.value = generateNextBillNo(updated);
+        }
+      }
+
+      renderTransactionsTable();
+      alert(`✔ Transaction Bill "${billNo}" deleted${deletedCloud ? " from Supabase" : ""}.`);
+    }
+
+    function renderTransactionsTable() {
+      var tbody = document.getElementById("admin-transactions-tbody");
+      var allList = window.ITVisionTransactionsCache || [];
+      var searchEl = document.getElementById("txn-search-input");
+      var typeEl = document.getElementById("txn-filter-type");
+
+      var term = searchEl ? (searchEl.value || "").toLowerCase().trim() : "";
+      var typeFilter = typeEl ? (typeEl.value || "ALL") : "ALL";
+
+      var filtered = allList.filter(function(t) {
+        var matchType = typeFilter === "ALL" || t.product_type === typeFilter;
+        if (!term) return matchType;
+        var hay = [t.bill_no, t.party_name, t.address, t.contact_no, t.product_type, t.description, t.txn_date].join(" ").toLowerCase();
+        return matchType && hay.includes(term);
+      });
+
+      var sumTotal = 0, sumRec = 0, sumDue = 0, sumProfit = 0;
+      for (var s = 0; s < filtered.length; s++) {
+        var item = filtered[s];
+        var tb = Number(item.total_bill_amount || 0);
+        var rc = Number(item.received_amount || 0);
+        var du = item.due_amount !== undefined ? Number(item.due_amount) : (tb - rc);
+        var pf = item.net_profit !== undefined ? Number(item.net_profit) : (tb - Number(item.product_cost || 0));
+        sumTotal += tb;
+        sumRec += rc;
+        sumDue += du;
+        sumProfit += pf;
+      }
+
+      var kpiTotal = document.getElementById("txn-kpi-total");
+      var kpiRec = document.getElementById("txn-kpi-received");
+      var kpiDue = document.getElementById("txn-kpi-due");
+      var kpiProfit = document.getElementById("txn-kpi-profit");
+      if (kpiTotal) kpiTotal.innerText = "₹" + sumTotal.toLocaleString("en-IN", { maximumFractionDigits: 2 });
+      if (kpiRec) kpiRec.innerText = "₹" + sumRec.toLocaleString("en-IN", { maximumFractionDigits: 2 });
+      if (kpiDue) kpiDue.innerText = "₹" + sumDue.toLocaleString("en-IN", { maximumFractionDigits: 2 });
+      if (kpiProfit) kpiProfit.innerText = "₹" + sumProfit.toLocaleString("en-IN", { maximumFractionDigits: 2 });
+
+      if (!tbody) return;
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="12" style="text-align:center; padding:18px; color:var(--color-text-muted);">No transactions recorded yet. Create Bill IT26-27/001 above!</td></tr>';
+        return;
+      }
+
+      var rows = "";
+      for (var i = 0; i < filtered.length; i++) {
+        var t = filtered[i];
+        var tbAmt = Number(t.total_bill_amount || 0);
+        var rcAmt = Number(t.received_amount || 0);
+        var dueAmt = t.due_amount !== undefined ? Number(t.due_amount) : Number((tbAmt - rcAmt).toFixed(2));
+        var costAmt = Number(t.product_cost || 0);
+        var profitAmt = t.net_profit !== undefined ? Number(t.net_profit) : Number((tbAmt - costAmt).toFixed(2));
+
+        var typeBg = t.product_type === "Sale" ? "#DBEAFE; color:#1E40AF" : (t.product_type === "Service" ? "#FEF3C7; color:#92400E" : "#F1F5F9; color:#334155");
+        var dueStyle = dueAmt > 0 ? "color:#DC2626; font-weight:700;" : "color:#16A34A; font-weight:700;";
+        var profitStyle = profitAmt >= 0 ? "color:#16A34A; font-weight:800;" : "color:#DC2626; font-weight:800;";
+        var safeBill = escapeHtml(t.bill_no);
+
+        rows += `
+          <tr>
+            <td><code><strong>${safeBill}</strong></code></td>
+            <td class="tabular" style="white-space:nowrap;">${escapeHtml(String(t.txn_date || "").slice(0, 10))}</td>
+            <td>
+              <strong>${escapeHtml(t.party_name)}</strong>
+              ${t.address ? `<div style="font-size:10px; color:var(--color-text-secondary);">${escapeHtml(t.address)}</div>` : ""}
+            </td>
+            <td class="tabular">${escapeHtml(t.contact_no || "-")}</td>
+            <td><span style="font-size:10px; font-weight:700; padding:2px 7px; border-radius:999px; background:${typeBg};">${escapeHtml(t.product_type || "Sale")}</span></td>
+            <td><span style="font-size:11px; color:var(--color-text-secondary); display:block; max-width:190px;">${escapeHtml(t.description || "")}</span></td>
+            <td class="tabular" style="font-weight:700;">₹${tbAmt.toLocaleString("en-IN")}</td>
+            <td class="tabular">₹${rcAmt.toLocaleString("en-IN")}</td>
+            <td class="tabular" style="${dueStyle}">₹${dueAmt.toLocaleString("en-IN")}</td>
+            <td class="tabular">₹${costAmt.toLocaleString("en-IN")}</td>
+            <td class="tabular" style="${profitStyle}">₹${profitAmt.toLocaleString("en-IN")}</td>
+            <td>
+              <div style="display:flex; gap:4px; flex-wrap:wrap;">
+                <button type="button" class="btn-bulk-step" style="color:var(--color-primary-navy); border-color:#93C5FD; font-weight:700;" onclick="handleEditTransaction('${safeBill}')">✏️ Edit</button>
+                <button type="button" class="btn-bulk-step" style="color:var(--color-danger-red); border-color:#FCA5A5;" onclick="handleDeleteTransaction('${safeBill}')">&times; Del</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }
+      tbody.innerHTML = rows;
     }
 
     /**

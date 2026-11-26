@@ -674,6 +674,123 @@ async function deleteSupabaseProduct(productId) {
   return data;
 }
 
+let adminSessionToken = "";
+
+function setAdminToken(token) {
+  adminSessionToken = token ? String(token) : "";
+  if (typeof sessionStorage !== "undefined") {
+    try {
+      if (adminSessionToken) sessionStorage.setItem("ITV_ADMIN_TOKEN", adminSessionToken);
+      else if (typeof sessionStorage.removeItem === "function") sessionStorage.removeItem("ITV_ADMIN_TOKEN");
+    } catch (_) {}
+  }
+}
+
+function getAdminToken() {
+  if (adminSessionToken) return adminSessionToken;
+  if (typeof sessionStorage !== "undefined") {
+    try {
+      adminSessionToken = sessionStorage.getItem("ITV_ADMIN_TOKEN") || "";
+    } catch (_) {}
+  }
+  return adminSessionToken;
+}
+
+function clearAdminToken() {
+  setAdminToken("");
+}
+
+/**
+ * Fetch Admin Transactions from Supabase via authenticated Netlify/Node server proxy
+ */
+async function fetchSupabaseTransactions() {
+  await initSupabaseAsync();
+  const token = getAdminToken();
+  if (!serverBackendAvailable || !token) return null;
+
+  try {
+    const res = await fetch("/api/supabase/transactions", {
+      method: "GET",
+      headers: { "X-Admin-Token": token }
+    });
+    const data = await res.json();
+    if (res.ok && data && data.success) {
+      return data.transactions || [];
+    }
+    if (res.status === 401) {
+      clearAdminToken();
+      const err = new Error(data.error || "Admin session expired. Please unlock Control Panel again.");
+      err.authRequired = true;
+      throw err;
+    }
+    return null;
+  } catch (err) {
+    if (err && err.authRequired) throw err;
+    console.warn("Transactions fetch exception:", err);
+    return null;
+  }
+}
+
+/**
+ * Insert or Update Admin Transaction Bill in Supabase
+ */
+async function saveSupabaseTransaction(txn) {
+  await initSupabaseAsync();
+  const token = getAdminToken();
+  if (!serverBackendAvailable) {
+    throw new Error("Server proxy unavailable; saved in local browser storage.");
+  }
+  if (!token) {
+    const err = new Error("Admin session required. Please sign in to save to Supabase.");
+    err.authRequired = true;
+    throw err;
+  }
+
+  const res = await fetch("/api/supabase/transactions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Admin-Token": token
+    },
+    body: JSON.stringify(txn)
+  });
+  const resJson = await res.json();
+  if (!res.ok || !resJson.success) {
+    const err = new Error(resJson.error || `Transaction save failed (HTTP ${res.status})`);
+    err.authRequired = res.status === 401;
+    throw err;
+  }
+  return resJson.data;
+}
+
+/**
+ * Delete Admin Transaction Bill from Supabase by Bill No
+ */
+async function deleteSupabaseTransaction(billNo) {
+  await initSupabaseAsync();
+  const token = getAdminToken();
+  if (!serverBackendAvailable) {
+    throw new Error("Server proxy unavailable; removed from local browser storage.");
+  }
+  if (!token) {
+    const err = new Error("Admin session required. Please sign in to delete from Supabase.");
+    err.authRequired = true;
+    throw err;
+  }
+
+  const res = await fetch(`/api/supabase/transactions?bill_no=${encodeURIComponent(billNo)}`, {
+    method: "DELETE",
+    headers: { "X-Admin-Token": token }
+  });
+  const resJson = await res.json();
+  if (!res.ok || !resJson.success) {
+    const err = new Error(resJson.error || `Transaction delete failed (HTTP ${res.status})`);
+    err.authRequired = res.status === 401;
+    throw err;
+  }
+  return resJson.data;
+}
+
 // Global exposure
 window.ITVisionSupabase = {
   config: IT_VISION_CONFIG,
@@ -689,7 +806,13 @@ window.ITVisionSupabase = {
   uploadMedia: uploadMediaToGoogleDrive,
   fetchProducts: fetchSupabaseProducts,
   saveProduct: saveSupabaseProduct,
-  deleteProduct: deleteSupabaseProduct
+  deleteProduct: deleteSupabaseProduct,
+  setAdminToken: setAdminToken,
+  getAdminToken: getAdminToken,
+  clearAdminToken: clearAdminToken,
+  fetchTransactions: fetchSupabaseTransactions,
+  saveTransaction: saveSupabaseTransaction,
+  deleteTransaction: deleteSupabaseTransaction
 };
 
 // Pre-warm .env connection on load in browser environments

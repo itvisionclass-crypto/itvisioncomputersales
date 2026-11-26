@@ -11,6 +11,35 @@ function sha256Buffer(str) {
   return crypto.createHash('sha256').update(String(str || ''), 'utf8').digest();
 }
 
+function getAdminSigningKey() {
+  return `${process.env.ADMIN_PASSWORD || ADMIN_CRED_SHA256}::${process.env.SUPABASE_SECRET_KEY || 'itv-admin-signing'}`;
+}
+
+function createAdminToken(username) {
+  const exp = Date.now() + 24 * 60 * 60 * 1000;
+  const payload = Buffer.from(JSON.stringify({ u: username, exp }), 'utf8').toString('base64url');
+  const sig = crypto.createHmac('sha256', getAdminSigningKey()).update(payload).digest('base64url');
+  return `${payload}.${sig}`;
+}
+
+function verifyAdminToken(token) {
+  if (!token || typeof token !== 'string' || !token.includes('.')) return null;
+  const parts = token.split('.');
+  if (parts.length !== 2) return null;
+  const [payload, sig] = parts;
+  const expectedSig = crypto.createHmac('sha256', getAdminSigningKey()).update(payload).digest('base64url');
+  const a = Buffer.from(sig);
+  const b = Buffer.from(expectedSig);
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
+  try {
+    const parsed = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
+    if (!parsed || !parsed.u || !parsed.exp || Date.now() > Number(parsed.exp)) return null;
+    return parsed.u;
+  } catch (_) {
+    return null;
+  }
+}
+
 const PORT = process.env.PORT || 3000;
 const BASE_DIR = path.resolve(__dirname);
 const UPLOADS_DIR = path.join(BASE_DIR, 'uploads');
@@ -93,7 +122,7 @@ function getSupabaseEnv() {
 function setCors(res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Admin-Token');
 }
 
 function sendJson(res, statusCode, payload) {
@@ -326,7 +355,7 @@ const server = http.createServer(async (req, res) => {
       if (!isValid) {
         return sendJson(res, 401, { success: false, error: 'Invalid admin username or password.' });
       }
-      return sendJson(res, 200, { success: true, username });
+      return sendJson(res, 200, { success: true, username, token: createAdminToken(username) });
     } catch (_) {
       return sendJson(res, 400, { success: false, error: 'Invalid authentication request payload.' });
     }
@@ -509,6 +538,125 @@ const server = http.createServer(async (req, res) => {
           error: tableMissing
             ? "Table 'public.products' does not exist in Supabase yet. Run supabase_schema.sql in Supabase SQL Editor."
             : (supaRes.data && supaRes.data.message) || 'Failed to delete product from Supabase.'
+        });
+      }
+
+      return sendJson(res, 405, { success: false, error: 'Method not allowed.' });
+    } catch (err) {
+      return sendJson(res, 500, { success: false, error: err.message });
+    }
+  }
+
+  // 3B. Admin Transactions Ledger Endpoint (GET / POST / DELETE — protected by signed admin token)
+  if (pathname === '/api/supabase/transactions') {
+    const reqHeaders = req.headers || {};
+    const authHdr = String(reqHeaders['authorization'] || '');
+    const token = String(reqHeaders['x-admin-token'] || (authHdr.toLowerCase().startsWith('bearer ') ? authHdr.slice(7) : '')).trim();
+    if (!verifyAdminToken(token)) {
+      return sendJson(res, 401, { success: false, error: 'Admin authorization required for transactions.' });
+    }
+
+    try {
+      if (req.method === 'GET') {
+        const supaRes = await supabaseRestRequest({
+          method: 'GET',
+          restPath: '/transactions?select=bill_no,txn_date,party_name,address,contact_no,product_type,description,total_bill_amount,received_amount,due_amount,product_cost,net_profit,created_at,updated_at&order=txn_date.desc,bill_no.desc',
+          useSecret: true
+        });
+        if (supaRes.statusCode >= 200 && supaRes.statusCode < 300) {
+          return sendJson(res, 200, {
+            success: true,
+            transactions: Array.isArray(supaRes.data) ? supaRes.data : []
+          });
+        }
+        return sendJson(res, supaRes.statusCode || 502, {
+          success: false,
+          error: (supaRes.data && supaRes.data.message) || 'Failed to fetch transactions.'
+        });
+      }
+
+      if (req.method === 'POST') {
+        const rawBody = await readRequestBody(req);
+        const txn = JSON.parse(rawBody || '{}');
+        const billNo = String(txn.bill_no || '').trim();
+        const partyName = String(txn.party_name || '').trim();
+        const totalBill = Number(txn.total_bill_amount);
+        const receivedAmt = Number(txn.received_amount || 0);
+        const productCost = Number(txn.product_cost || 0);
+
+        if (!billNo || !partyName || isNaN(totalBill)) {
+          return sendJson(res, 400, {
+            success: false,
+            error: 'Invalid transaction payload: bill_no, party_name, and numeric total_bill_amount are required.'
+          });
+        }
+
+        const rawType = String(txn.product_type || 'Sale').trim();
+        const productType = ['Sale', 'Service', 'Other'].includes(rawType) ? rawType : 'Other';
+        const dueAmount = Number((totalBill - (isNaN(receivedAmt) ? 0 : receivedAmt)).toFixed(2));
+        const netProfit = Number((totalBill - (isNaN(productCost) ? 0 : productCost)).toFixed(2));
+
+        const payload = {
+          bill_no: billNo,
+          txn_date: txn.txn_date ? String(txn.txn_date).slice(0, 10) : new Date().toISOString().slice(0, 10),
+          party_name: partyName,
+          address: txn.address ? String(txn.address).trim() : '',
+          contact_no: txn.contact_no ? String(txn.contact_no).trim() : '',
+          product_type: productType,
+          description: txn.description ? String(txn.description).trim() : '',
+          total_bill_amount: Number(totalBill.toFixed(2)),
+          received_amount: Number((isNaN(receivedAmt) ? 0 : receivedAmt).toFixed(2)),
+          due_amount: dueAmount,
+          product_cost: Number((isNaN(productCost) ? 0 : productCost).toFixed(2)),
+          net_profit: netProfit,
+          updated_at: new Date().toISOString()
+        };
+
+        const supaRes = await supabaseRestRequest({
+          method: 'POST',
+          restPath: '/transactions?on_conflict=bill_no',
+          bodyObj: payload,
+          useSecret: true,
+          prefer: 'resolution=merge-duplicates,return=representation'
+        });
+
+        if (supaRes.statusCode >= 200 && supaRes.statusCode < 300) {
+          return sendJson(res, 200, { success: true, data: supaRes.data });
+        }
+        return sendJson(res, supaRes.statusCode || 502, {
+          success: false,
+          error: (supaRes.data && supaRes.data.message) || 'Failed to save transaction.'
+        });
+      }
+
+      if (req.method === 'DELETE') {
+        let billNo = reqUrl.searchParams.get('bill_no') || reqUrl.searchParams.get('id');
+        if (!billNo) {
+          try {
+            const rawBody = await readRequestBody(req);
+            if (rawBody) {
+              const b = JSON.parse(rawBody);
+              billNo = b.bill_no || b.id;
+            }
+          } catch (_) {}
+        }
+        if (!billNo) {
+          return sendJson(res, 400, { success: false, error: 'Missing bill_no for transaction deletion.' });
+        }
+
+        const supaRes = await supabaseRestRequest({
+          method: 'DELETE',
+          restPath: `/transactions?bill_no=eq.${encodeURIComponent(billNo)}`,
+          useSecret: true,
+          prefer: 'return=representation'
+        });
+
+        if (supaRes.statusCode >= 200 && supaRes.statusCode < 300) {
+          return sendJson(res, 200, { success: true, data: supaRes.data });
+        }
+        return sendJson(res, supaRes.statusCode || 502, {
+          success: false,
+          error: (supaRes.data && supaRes.data.message) || 'Failed to delete transaction.'
         });
       }
 

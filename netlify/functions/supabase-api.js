@@ -1,5 +1,12 @@
 const https = require('https');
+const crypto = require('crypto');
 const { URL } = require('url');
+
+const ADMIN_CRED_SHA256 = 'f966a9ce0782d1d49d05ce904990c8ce0451b6e29ee6011908d4ede5ccc677f3';
+
+function sha256Buffer(str) {
+  return crypto.createHash('sha256').update(String(str || ''), 'utf8').digest();
+}
 
 function getSupabaseEnv() {
   const url = (process.env.SUPABASE_URL || '').replace(/\/+$/, '');
@@ -272,6 +279,39 @@ exports.handler = async function (event) {
       return jsonResponse(405, { success: false, error: 'Method not allowed.' });
     } catch (err) {
       return jsonResponse(500, { success: false, error: err.message });
+    }
+  }
+
+  // Admin Portal Authentication Endpoint (verifies credentials against server env vars)
+  if (reqPath.endsWith('/admin-login') && method === 'POST') {
+    try {
+      const body = JSON.parse(event.body || '{}');
+      const username = typeof body.username === 'string' ? body.username.trim() : '';
+      const password = typeof body.password === 'string' ? body.password : '';
+      if (!username || !password) {
+        return jsonResponse(400, { success: false, error: 'Username and password are required.' });
+      }
+
+      const envUser = process.env.ADMIN_USERNAME;
+      const envPass = process.env.ADMIN_PASSWORD;
+      let isValid = false;
+
+      if (envUser && envPass) {
+        const uOk = crypto.timingSafeEqual(sha256Buffer(username), sha256Buffer(envUser));
+        const pOk = crypto.timingSafeEqual(sha256Buffer(password), sha256Buffer(envPass));
+        isValid = uOk && pOk;
+      } else {
+        const expectedBuf = Buffer.from(ADMIN_CRED_SHA256, 'hex');
+        const inputBuf = sha256Buffer(`${username}::${password}`);
+        isValid = crypto.timingSafeEqual(inputBuf, expectedBuf);
+      }
+
+      if (!isValid) {
+        return jsonResponse(401, { success: false, error: 'Invalid admin username or password.' });
+      }
+      return jsonResponse(200, { success: true, username });
+    } catch (_) {
+      return jsonResponse(400, { success: false, error: 'Invalid authentication request payload.' });
     }
   }
 

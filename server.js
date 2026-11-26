@@ -1,8 +1,15 @@
 const http = require('http');
 const https = require('https');
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const { URL } = require('url');
+
+const ADMIN_CRED_SHA256 = 'f966a9ce0782d1d49d05ce904990c8ce0451b6e29ee6011908d4ede5ccc677f3';
+
+function sha256Buffer(str) {
+  return crypto.createHash('sha256').update(String(str || ''), 'utf8').digest();
+}
 
 const PORT = process.env.PORT || 3000;
 const BASE_DIR = path.resolve(__dirname);
@@ -290,6 +297,40 @@ const server = http.createServer(async (req, res) => {
 
   const reqUrl = new URL(req.url, `http://localhost:${PORT}`);
   const pathname = reqUrl.pathname;
+
+  // 0. Server-Side Admin Portal Login (verifies credentials against .env ADMIN_USERNAME / ADMIN_PASSWORD)
+  if (pathname === '/api/supabase/admin-login' && req.method === 'POST') {
+    try {
+      const rawBody = await readRequestBody(req);
+      const body = JSON.parse(rawBody || '{}');
+      const username = typeof body.username === 'string' ? body.username.trim() : '';
+      const password = typeof body.password === 'string' ? body.password : '';
+      if (!username || !password) {
+        return sendJson(res, 400, { success: false, error: 'Username and password are required.' });
+      }
+
+      const envUser = process.env.ADMIN_USERNAME;
+      const envPass = process.env.ADMIN_PASSWORD;
+      let isValid = false;
+
+      if (envUser && envPass) {
+        const uOk = crypto.timingSafeEqual(sha256Buffer(username), sha256Buffer(envUser));
+        const pOk = crypto.timingSafeEqual(sha256Buffer(password), sha256Buffer(envPass));
+        isValid = uOk && pOk;
+      } else {
+        const expectedBuf = Buffer.from(ADMIN_CRED_SHA256, 'hex');
+        const inputBuf = sha256Buffer(`${username}::${password}`);
+        isValid = crypto.timingSafeEqual(inputBuf, expectedBuf);
+      }
+
+      if (!isValid) {
+        return sendJson(res, 401, { success: false, error: 'Invalid admin username or password.' });
+      }
+      return sendJson(res, 200, { success: true, username });
+    } catch (_) {
+      return sendJson(res, 400, { success: false, error: 'Invalid authentication request payload.' });
+    }
+  }
 
   // 1. Safe Public Supabase Config (NEVER returns SUPABASE_SECRET_KEY)
   if (pathname === '/api/supabase/config' && req.method === 'GET') {

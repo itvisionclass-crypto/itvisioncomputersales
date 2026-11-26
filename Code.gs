@@ -777,13 +777,42 @@ function getTicketStatus(query) {
   return { success: false, message: "No service ticket found for: " + query };
 }
 
+var ADMIN_CRED_SHA256_HEX = "f966a9ce0782d1d49d05ce904990c8ce0451b6e29ee6011908d4ede5ccc677f3";
+
+function verifyAdminCredentialsGas(usernameOrObj, passwordOpt) {
+  var u = "";
+  var p = "";
+  if (usernameOrObj && typeof usernameOrObj === "object") {
+    u = String(usernameOrObj.username || "").trim();
+    p = String(usernameOrObj.password || "");
+  } else {
+    u = String(usernameOrObj || "").trim();
+    p = String(passwordOpt || "");
+  }
+  if (!u || !p) return false;
+
+  var props = PropertiesService.getScriptProperties();
+  var propUser = props ? props.getProperty("ADMIN_USERNAME") : null;
+  var propPass = props ? props.getProperty("ADMIN_PASSWORD") : null;
+  if (propUser && propPass) {
+    return u === propUser && p === propPass;
+  }
+
+  var digestBytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, u + "::" + p);
+  var hex = digestBytes.map(function(b) {
+    var v = (b < 0 ? b + 256 : b).toString(16);
+    return v.length === 1 ? "0" + v : v;
+  }).join("");
+  return hex === ADMIN_CRED_SHA256_HEX;
+}
+
 /**
  * Phase 2 & 8: Admin Operations Endpoints
  */
-function getAdminDashboardData(pinCode) {
-  // Simple administrative authorization guard
-  if (pinCode !== "9924" && pinCode !== "admin2026") {
-    return { success: false, message: "Unauthorized. Enter valid admin PIN." };
+function getAdminDashboardData(usernameOrAuth, passwordOpt) {
+  // Administrative username & password authorization guard
+  if (!verifyAdminCredentialsGas(usernameOrAuth, passwordOpt)) {
+    return { success: false, message: "Unauthorized. Enter valid admin username and password." };
   }
 
   var ss = SpreadsheetApp.getActiveSpreadsheet();

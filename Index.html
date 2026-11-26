@@ -1939,15 +1939,31 @@
           <h2 style="font-size:18px; font-weight:800;">IT VISION CENTRAL CONTROL PANEL</h2>
           <div style="font-size:11px; opacity:0.85;">Multi-Branch Storefront &amp; Service Hub Management</div>
         </div>
-        <button class="btn-hero-secondary" onclick="navigateTo('home')">&larr; Back to Storefront</button>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <button type="button" id="btn-admin-logout" class="btn-hero-secondary" style="display:none;" onclick="logoutAdminPanel()">🔒 Lock</button>
+          <button class="btn-hero-secondary" onclick="navigateTo('home')">&larr; Back to Storefront</button>
+        </div>
       </div>
 
-      <!-- PIN Security Guard Form -->
-      <div id="admin-login-guard" style="max-width:380px; margin:40px auto; background:#FFFFFF; padding:24px; border-radius:8px; border:1px solid var(--color-border-hairline); text-align:center;">
-        <h3 style="margin-bottom:8px; color:var(--color-primary-navy);">Operator Authorization</h3>
-        <p style="font-size:12px; color:var(--color-text-secondary); margin-bottom:16px;">Enter Store Manager 4-Digit Security PIN</p>
-        <input type="password" id="admin-pin-input" class="form-ctrl-sm" placeholder="Enter PIN (e.g. 9924)" style="text-align:center; font-size:18px; letter-spacing:4px; height:42px; margin-bottom:12px;">
-        <button class="btn-checkout-confirm" onclick="verifyAdminPIN()">Unlock Control Panel</button>
+      <!-- Admin Credentials Login Guard -->
+      <div id="admin-login-guard" style="max-width:400px; margin:40px auto; background:#FFFFFF; padding:26px 24px; border-radius:8px; border:1px solid var(--color-border-hairline); text-align:center;">
+        <h3 style="margin-bottom:6px; color:var(--color-primary-navy);">Operator Authorization</h3>
+        <p style="font-size:12px; color:var(--color-text-secondary); margin-bottom:16px;">Sign in with your IT Vision Admin Username &amp; Password</p>
+        <form onsubmit="verifyAdminCredentials(event)" style="text-align:left; display:flex; flex-direction:column; gap:10px;">
+          <div class="form-group-sm">
+            <label for="admin-username-input">Username:</label>
+            <input type="text" id="admin-username-input" class="form-ctrl-sm" placeholder="Enter admin username" autocomplete="username" style="height:38px;" required>
+          </div>
+          <div class="form-group-sm">
+            <label for="admin-password-input">Password:</label>
+            <div style="position:relative; display:flex; align-items:center;">
+              <input type="password" id="admin-password-input" class="form-ctrl-sm" placeholder="Enter admin password" autocomplete="current-password" style="height:38px; padding-right:60px;" required>
+              <button type="button" id="btn-toggle-admin-pw" onclick="toggleAdminPasswordVisibility()" style="position:absolute; right:8px; background:none; border:none; color:var(--color-primary-navy); font-size:11px; font-weight:700; cursor:pointer;">Show</button>
+            </div>
+          </div>
+          <div id="admin-login-error" style="display:none; background:#FEE2E2; color:#991B1B; border:1px solid #FCA5A5; border-radius:4px; padding:8px 10px; font-size:11px; font-weight:600;"></div>
+          <button type="submit" id="btn-admin-unlock" class="btn-checkout-confirm" style="margin-top:4px;">🔓 Unlock Control Panel</button>
+        </form>
       </div>
 
       <!-- Admin Dashboard Content (Unlocked) -->
@@ -3715,15 +3731,128 @@
     /**
      * Admin Portal Management (#admin)
      */
-    function verifyAdminPIN() {
-      var pin = document.getElementById("admin-pin-input").value.trim();
-      if (pin === "9924" || pin === "admin2026") {
-        document.getElementById("admin-login-guard").style.display = "none";
-        document.getElementById("admin-dashboard-content").style.display = "block";
+    var ADMIN_OFFLINE_HASH_HEX = "f966a9ce0782d1d49d05ce904990c8ce0451b6e29ee6011908d4ede5ccc677f3";
+
+    function toggleAdminPasswordVisibility() {
+      var pwEl = document.getElementById("admin-password-input");
+      var btnEl = document.getElementById("btn-toggle-admin-pw");
+      if (!pwEl) return;
+      var show = pwEl.type === "password";
+      pwEl.type = show ? "text" : "password";
+      if (btnEl) btnEl.innerText = show ? "Hide" : "Show";
+    }
+
+    async function computeClientSha256Hex(str) {
+      if (typeof crypto === "undefined" || !crypto.subtle || typeof TextEncoder === "undefined") {
+        return "";
+      }
+      var buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+      var bytes = Array.prototype.slice.call(new Uint8Array(buf));
+      return bytes.map(function(b) { return ("0" + b.toString(16)).slice(-2); }).join("");
+    }
+
+    async function verifyAdminCredentials(event) {
+      if (event) event.preventDefault();
+      var userEl = document.getElementById("admin-username-input");
+      var pwEl = document.getElementById("admin-password-input");
+      var errEl = document.getElementById("admin-login-error");
+      var btnEl = document.getElementById("btn-admin-unlock");
+
+      var username = userEl ? userEl.value.trim() : "";
+      var password = pwEl ? pwEl.value : "";
+
+      if (errEl && errEl.style) {
+        errEl.style.display = "none";
+        errEl.innerText = "";
+      }
+      if (!username || !password) {
+        if (errEl && errEl.style) {
+          errEl.innerText = "Please enter both username and password.";
+          errEl.style.display = "block";
+        }
+        return;
+      }
+
+      if (btnEl) {
+        btnEl.disabled = true;
+        btnEl.innerText = "Verifying credentials...";
+      }
+
+      var authenticated = false;
+      var explicitReject = false;
+
+      try {
+        var proto = (window.location && window.location.protocol) || "";
+        var host = (window.location && window.location.hostname) || "";
+        var canUseServer = (proto === "http:" || proto === "https:") && !host.includes("script.google.com");
+
+        if (canUseServer && typeof fetch === "function") {
+          var res = await fetch("/api/supabase/admin-login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username: username, password: password })
+          });
+          var ct = (res.headers && res.headers.get && res.headers.get("content-type")) || "";
+          if (ct.includes("application/json")) {
+            var json = await res.json();
+            if (res.ok && json && json.success) {
+              authenticated = true;
+            } else {
+              explicitReject = true;
+            }
+          }
+        }
+      } catch (_) {}
+
+      if (!authenticated && !explicitReject) {
+        var digest = await computeClientSha256Hex(username + "::" + password);
+        if (digest && digest === ADMIN_OFFLINE_HASH_HEX) {
+          authenticated = true;
+        }
+      }
+
+      if (btnEl) {
+        btnEl.disabled = false;
+        btnEl.innerText = "🔓 Unlock Control Panel";
+      }
+
+      if (authenticated) {
+        var guard = document.getElementById("admin-login-guard");
+        var content = document.getElementById("admin-dashboard-content");
+        var logoutBtn = document.getElementById("btn-admin-logout");
+        if (guard && guard.style) guard.style.display = "none";
+        if (content && content.style) content.style.display = "block";
+        if (logoutBtn && logoutBtn.style) logoutBtn.style.display = "inline-block";
+        if (pwEl) pwEl.value = "";
         loadAdminDashboardData();
       } else {
-        alert("Invalid PIN. Access restricted to store administrators.");
+        if (pwEl) pwEl.value = "";
+        if (errEl && errEl.style) {
+          errEl.innerText = "Invalid username or password. Access restricted to store administrators.";
+          errEl.style.display = "block";
+        } else {
+          alert("Invalid username or password. Access restricted to store administrators.");
+        }
       }
+    }
+
+    function verifyAdminPIN() {
+      return verifyAdminCredentials();
+    }
+
+    function logoutAdminPanel() {
+      var guard = document.getElementById("admin-login-guard");
+      var content = document.getElementById("admin-dashboard-content");
+      var logoutBtn = document.getElementById("btn-admin-logout");
+      var userEl = document.getElementById("admin-username-input");
+      var pwEl = document.getElementById("admin-password-input");
+      var errEl = document.getElementById("admin-login-error");
+      if (guard && guard.style) guard.style.display = "block";
+      if (content && content.style) content.style.display = "none";
+      if (logoutBtn && logoutBtn.style) logoutBtn.style.display = "none";
+      if (userEl) userEl.value = "";
+      if (pwEl) pwEl.value = "";
+      if (errEl && errEl.style) errEl.style.display = "none";
     }
 
     function loadAdminDashboardData() {
